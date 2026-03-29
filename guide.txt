@@ -6,22 +6,25 @@ REQUIREMENTS
 ------------
 Python 3.10+
 Install dependencies:
-    pip install torch numpy tqdm
+    pip install torch numpy tqdm matplotlib
 
 
 PROJECT STRUCTURE
 -----------------
 AC_Project-main/
   neural_cryptanalysis/
-    ciphers/        - Block cipher implementations
-    data/           - Dataset generation utilities
-    models/         - MLP, CNN, Siamese model definitions
-    representations/- Input feature encodings (delta, concat, etc.)
-    experiments/    - Training and benchmark scripts
-    utils/          - Config and cipher registry
-  cipher_verification_output.txt  - Cipher test results
-  model_benchmark_output.txt      - Model benchmark results
-  guide.txt                       - This file
+    ciphers/          - 8 block cipher implementations + verification
+    data/             - Dataset generation, save, load utilities
+    models/           - MLP, CNN, Siamese model definitions
+    representations/  - 5 input feature encodings
+    experiments/      - Training, benchmark, and comparison scripts
+    utils/            - Config and cipher registry
+  plots/              - Generated graphs (created on first run)
+  cipher_verification_output.txt   - Cipher test + ML accuracy results
+  model_benchmark_output.txt       - Model benchmark results
+  representation_comparison_output.txt - Representation comparison results
+  experiments_output.txt           - Full experiment results (3 experiments)
+  guide.txt                        - This file
 
 
 ALL COMMANDS MUST BE RUN FROM INSIDE AC_Project-main/
@@ -33,12 +36,14 @@ ALL COMMANDS MUST BE RUN FROM INSIDE AC_Project-main/
 ================================================================
 
 Runs all 8 ciphers with fixed inputs, checks test vectors,
-avalanche effect, and differential outputs.
+avalanche effect, differential outputs, AND ML distinguisher
+accuracy vs rounds for each cipher.
 Results saved to cipher_verification_output.txt
 
     python neural_cryptanalysis/ciphers/verify_all_ciphers.py
 
-Expected output: all 8 ciphers show PASS in the summary.
+Expected: all 8 ciphers PASS, accuracy tables show degradation
+with increasing rounds.
 
 
 ================================================================
@@ -57,8 +62,8 @@ Example (Simon32, 4 rounds, delta representation, 10000 samples):
     cipher = get_cipher('simon32')
     X, y   = generate_dataset(cipher, rounds=4, n_samples=10000,
                                delta_p=DELTA_P['simon32'],
-                               representation='concat')
-    save_dataset(X, y, 'simon_concat_r4')
+                               representation='delta')
+    save_dataset(X, y, 'simon_delta_r4')
     print('Saved:', X.shape, y.shape)
     "
 
@@ -67,7 +72,12 @@ Available ciphers:
     craft, pyjamask, present
 
 Available representations:
-    delta, concat, bitslice, joint, statistical
+    delta       - bits(C XOR C')                    shape: (block_bits,)
+    concat      - bits(C) || bits(C')               shape: (2*block_bits,)
+    bitslice    - interleaved [C_i, C'_i] per bit   shape: (2*block_bits,)
+    statistical - extended HW features              shape: (12 + block_bits//4,)
+    joint       - bits(P,P',C,C',dP,dC)             shape: (6*block_bits,)
+                  NOTE: joint includes plaintext — requires white-box access
 
 
 ================================================================
@@ -75,19 +85,21 @@ Available representations:
 ================================================================
 
 --- MLP ---
-    python -m neural_cryptanalysis.experiments.train_mlp
+    python -m neural_cryptanalysis.experiments.train_mlp \
+        --dataset neural_cryptanalysis/data/datasets/simon_delta_r4 \
+        --epochs 15 --batch 256 --lr 3e-4
 
---- CNN ---
+--- CNN (requires concat representation) ---
     python -m neural_cryptanalysis.experiments.train_cnn \
         --dataset neural_cryptanalysis/data/datasets/simon_concat_r4 \
         --epochs 10 --batch 128 --lr 1e-3
 
---- Siamese ---
+--- Siamese (requires concat representation) ---
     python -m neural_cryptanalysis.experiments.train_siamese \
         --dataset neural_cryptanalysis/data/datasets/simon_concat_r4 \
         --epochs 10 --batch 128 --lr 1e-3
 
-Optional flags (CNN and Siamese):
+Optional flags (all three scripts):
     --save path/to/model.pt     Save trained weights
     --epochs N                  Number of training epochs
     --batch  N                  Batch size
@@ -103,7 +115,29 @@ a full report to model_benchmark_output.txt
 
     python -m neural_cryptanalysis.experiments.benchmark_models
 
-Results are printed to console and saved automatically.
+
+================================================================
+  STEP 5 — COMPARE REPRESENTATIONS
+================================================================
+
+Trains MLP on each of the 5 representations and compares accuracy.
+Results saved to representation_comparison_output.txt
+
+    python -m neural_cryptanalysis.experiments.compare_representations
+
+
+================================================================
+  STEP 6 — RUN ALL EXPERIMENTS + GENERATE GRAPHS
+================================================================
+
+Runs all 3 required experiments and saves plots to plots/:
+  - Accuracy vs Rounds
+  - Accuracy vs Representation
+  - Accuracy vs Model Architecture
+
+Results saved to experiments_output.txt
+
+    python -m neural_cryptanalysis.experiments.run_all_experiments
 
 
 ================================================================
@@ -126,22 +160,37 @@ Results are printed to console and saved automatically.
   MODEL REFERENCE
 ================================================================
 
-  Model     File                    Input           Params
-  -------   ----                    -----           ------
-  MLP       models/mlp.py           concat (flat)   ~800K
-  CNN       models/cnn.py           concat (flat)   ~313K
-  Siamese   models/siamese.py       concat (flat)    ~25K
+  Model     File                    Best Rep    Params
+  -------   ----                    --------    ------
+  MLP       models/mlp.py           delta       ~800K
+  CNN       models/cnn.py           concat      ~313K
+  Siamese   models/siamese.py       concat       ~25K
 
   All models output a single sigmoid value in [0, 1]:
     > 0.5  ->  predicted CIPHER
     < 0.5  ->  predicted RANDOM PERMUTATION
 
+  CNN expects concat representation (input_dim = 2 * block_bits).
+  It internally splits into C and C' channels plus XOR channel.
+
+  Siamese expects concat representation (input_dim = 2 * block_bits).
+  It internally splits into two branches of size block_bits each.
+
+  MLP works with any flat representation.
+
 
 ================================================================
-  OUTPUT FILES
+  OUTPUT FILES REFERENCE
 ================================================================
 
-  cipher_verification_output.txt   - Cipher test results
-  model_benchmark_output.txt       - Model accuracy results
+  File                                  Generated by
+  ----                                  ------------
+  cipher_verification_output.txt        verify_all_ciphers.py
+  model_benchmark_output.txt            benchmark_models.py
+  representation_comparison_output.txt  compare_representations.py
+  experiments_output.txt                run_all_experiments.py
+  plots/acc_vs_rounds.png               run_all_experiments.py
+  plots/acc_vs_representation.png       run_all_experiments.py
+  plots/acc_vs_model.png                run_all_experiments.py
 
 ================================================================

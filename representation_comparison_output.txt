@@ -1,0 +1,44 @@
+=================================================================
+  REPRESENTATION COMPARISON REPORT
+  Neural Cryptanalysis Project
+=================================================================
+
+  Cipher  : simon32  |  Rounds : 4
+  Samples : 6000    |  Epochs : 10  |  Model: MLP
+
+  Generating dataset: representation='delta'...
+    input_dim=32      accuracy=0.9967
+
+  Generating dataset: representation='concat'...
+    input_dim=64      accuracy=0.9767
+
+  Generating dataset: representation='bitslice'...
+    input_dim=64      accuracy=0.9542
+
+  Generating dataset: representation='statistical'...
+    input_dim=20      accuracy=0.9050
+
+  Generating dataset: representation='joint'...
+    input_dim=192     accuracy=0.9950
+
+=================================================================
+  SUMMARY — Representation vs Accuracy
+=================================================================
+
+  Representation    Input Dim   Accuracy  Effect / Notes
+  -----------------------------------------------------------------
+  delta                    32     0.9967  Best signal — directly encodes differential pattern (C XOR C')
+  concat                   64     0.9767  Full information — model learns relations freely
+  bitslice                 64     0.9542  Bit-position aligned — ideal for CNN local pattern detection
+  statistical              20     0.9050  Interpretable but weak — only 3 features (HW-based)
+  joint                   192     0.9950  Richest input — includes plaintext, useful for white-box analysis
+
+  Key Takeaways:
+  - delta      : most aligned with classical differential cryptanalysis
+  - concat     : flexible, works well with MLP and Siamese
+  - bitslice   : preserves bit-position structure, best for CNN
+  - statistical: interpretable but too compressed (3 features only)
+  - joint      : strongest in white-box setting (plaintext visible)
+
+  Baseline (random) : 0.5000
+=================================================================

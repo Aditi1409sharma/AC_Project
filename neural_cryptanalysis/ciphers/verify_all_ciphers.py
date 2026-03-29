@@ -372,6 +372,90 @@ p("\n" + "=" * 60)
 p("  END OF REPORT")
 p("=" * 60)
 
+# ══════════════════════════════════════════════
+# ML Distinguisher Accuracy vs Rounds
+# ══════════════════════════════════════════════
+p(section("ML DISTINGUISHER ACCURACY vs ROUNDS"))
+p("  Trains a Siamese distinguisher on each cipher at increasing")
+p("  round counts to show how accuracy degrades as the cipher")
+p("  becomes harder to distinguish from random.")
+p("  Model: Siamese  |  Representation: delta  |  Samples: 4000  |  Epochs: 10")
+p("")
+
+import torch
+import torch.nn as nn
+import numpy as np
+from torch.utils.data import DataLoader, TensorDataset
+from neural_cryptanalysis.data.generator import generate_dataset
+from neural_cryptanalysis.utils.config   import get_cipher, DELTA_P, FULL_ROUNDS
+from neural_cryptanalysis.models.siamese import SiameseNet
+
+def _quick_acc(cipher_name, rounds, n=4000, epochs=10):
+    c     = get_cipher(cipher_name)
+    delta = DELTA_P[cipher_name]
+    # delta rep: input = bits(C XOR C'), shape = (block_bits,)
+    X, y  = generate_dataset(c, rounds=rounds, n_samples=n,
+                              delta_p=delta, representation="delta")
+    X = X.astype(np.float32)
+    X_t = torch.tensor(X)
+    y_t = torch.tensor(y, dtype=torch.float32).unsqueeze(1)
+    split = int(0.8 * len(X_t))
+    tr = DataLoader(TensorDataset(X_t[:split], y_t[:split]), batch_size=256, shuffle=True)
+    te = DataLoader(TensorDataset(X_t[split:], y_t[split:]), batch_size=256)
+
+    # For delta rep, branch_dim = block_bits (both branches are the same delta vector)
+    # Use MLP directly since delta is a single vector, not a pair
+    from neural_cryptanalysis.models.mlp import MLP
+    model = MLP(input_dim=X_t.shape[1])
+
+    opt   = torch.optim.AdamW(model.parameters(), lr=1e-3, weight_decay=1e-4)
+    sched = torch.optim.lr_scheduler.CosineAnnealingLR(opt, T_max=epochs)
+    crit  = nn.BCELoss()
+
+    for _ in range(epochs):
+        model.train()
+        for xb, yb in tr:
+            pred = model(xb); l = crit(pred, yb)
+            opt.zero_grad(); l.backward(); opt.step()
+        sched.step()
+
+    model.eval(); correct = tot = 0
+    with torch.no_grad():
+        for xb, yb in te:
+            pred = model(xb)
+            correct += ((pred > 0.5).float() == yb).sum().item()
+            tot     += yb.size(0)
+    return correct / tot
+
+# Run for each cipher
+cipher_round_configs = {
+    "simon32":  list(range(2, 10)),
+    "gift64":   list(range(2, 10)),
+    "present":  list(range(2, 10)),
+    "craft":    list(range(2, 10)),
+    "pyjamask": list(range(1, 8)),
+}
+
+for cipher_name, round_list in cipher_round_configs.items():
+    p(f"\n  {cipher_name.upper()}")
+    p(f"  {'Round':<8} {'Accuracy':>10}  {'Distinguishable?':>18}")
+    p(f"  {'-'*40}")
+    prev_acc = None
+    for r in round_list:
+        acc = _quick_acc(cipher_name, r)
+        change = ""
+        if prev_acc is not None:
+            diff = acc - prev_acc
+            change = f"  ({diff:+.4f})"
+        dist = "YES" if acc > 0.55 else "NO (near random)"
+        p(f"  r={r:<6} {acc:>10.4f}  {dist:<18}{change}")
+        prev_acc = acc
+    p("")
+
+p("=" * 60)
+p("  END OF REPORT")
+p("=" * 60)
+
 # ─────────────────────────────────────────────
 # Write to file
 # ─────────────────────────────────────────────

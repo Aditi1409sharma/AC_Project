@@ -290,3 +290,80 @@
 ============================================================
   END OF REPORT
 ============================================================
+
+============================================================
+  ML DISTINGUISHER ACCURACY vs ROUNDS
+============================================================
+
+  Trains a Siamese distinguisher on each cipher at increasing
+  round counts to show how accuracy degrades as the cipher
+  becomes harder to distinguish from random.
+  Model: Siamese  |  Representation: delta  |  Samples: 4000  |  Epochs: 10
+
+
+  SIMON32
+  Round      Accuracy    Distinguishable?
+  ----------------------------------------
+  r=2          1.0000  YES               
+  r=3          1.0000  YES                 (+0.0000)
+  r=4          0.9975  YES                 (-0.0025)
+  r=5          0.9337  YES                 (-0.0638)
+  r=6          0.6950  YES                 (-0.2388)
+  r=7          0.5525  YES                 (-0.1425)
+  r=8          0.5312  NO (near random)    (-0.0212)
+  r=9          0.4800  NO (near random)    (-0.0513)
+
+
+  GIFT64
+  Round      Accuracy    Distinguishable?
+  ----------------------------------------
+  r=2          1.0000  YES               
+  r=3          0.9888  YES                 (-0.0112)
+  r=4          0.8488  YES                 (-0.1400)
+  r=5          0.5713  YES                 (-0.2775)
+  r=6          0.4587  NO (near random)    (-0.1125)
+  r=7          0.5125  NO (near random)    (+0.0537)
+  r=8          0.5112  NO (near random)    (-0.0012)
+  r=9          0.5012  NO (near random)    (-0.0100)
+
+
+  PRESENT
+  Round      Accuracy    Distinguishable?
+  ----------------------------------------
+  r=2          1.0000  YES               
+  r=3          1.0000  YES                 (+0.0000)
+  r=4          0.9150  YES                 (-0.0850)
+  r=5          0.6012  YES                 (-0.3138)
+  r=6          0.4975  NO (near random)    (-0.1037)
+  r=7          0.4913  NO (near random)    (-0.0062)
+  r=8          0.5250  NO (near random)    (+0.0338)
+  r=9          0.4863  NO (near random)    (-0.0388)
+
+
+  CRAFT
+  Round      Accuracy    Distinguishable?
+  ----------------------------------------
+  r=2          1.0000  YES               
+  r=3          0.9850  YES                 (-0.0150)
+  r=4          0.4813  NO (near random)    (-0.5037)
+  r=5          0.4775  NO (near random)    (-0.0038)
+  r=6          0.5212  NO (near random)    (+0.0438)
+  r=7          0.5112  NO (near random)    (-0.0100)
+  r=8          0.4888  NO (near random)    (-0.0225)
+  r=9          0.5325  NO (near random)    (+0.0437)
+
+
+  PYJAMASK
+  Round      Accuracy    Distinguishable?
+  ----------------------------------------
+  r=1          1.0000  YES               
+  r=2          0.4450  NO (near random)    (-0.5550)
+  r=3          0.4500  NO (near random)    (+0.0050)
+  r=4          0.4850  NO (near random)    (+0.0350)
+  r=5          0.5150  NO (near random)    (+0.0300)
+  r=6          0.4825  NO (near random)    (-0.0325)
+  r=7          0.5312  NO (near random)    (+0.0488)
+
+============================================================
+  END OF REPORT
+============================================================

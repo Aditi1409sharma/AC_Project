@@ -118,7 +118,7 @@ class CNN(nn.Module):
     def forward(self, x: torch.Tensor) -> torch.Tensor:
         c   = x[:, :self.branch_dim]          # bits(C)
         cp  = x[:, self.branch_dim:]          # bits(C')
-        xor = (c - cp).abs()                  # approximate XOR on float bits
+        xor = torch.clamp((c - cp).abs(), 0, 1)  # binary XOR: 1 where bits differ, 0 where same
 
         # Stack 3 channels: (B, 3, branch_dim)
         x = torch.stack([c, cp, xor], dim=1)
