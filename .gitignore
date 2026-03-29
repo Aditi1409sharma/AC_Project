@@ -47,13 +47,13 @@ Thumbs.db
 
 # Data (ignore large datasets)
 
-data/
-datasets/
+# data/
+# datasets/
 
 # # Outputs & results
 
-# outputs/
-# results/
+outputs/
+results/
 
 # Python packaging
 
