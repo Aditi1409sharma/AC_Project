@@ -48,7 +48,7 @@ Thumbs.db
 # Data (ignore large datasets)
 
 # data/
-# datasets/
+neural_cryptanalysis/data/datasets/
 
 # # Outputs & results
 

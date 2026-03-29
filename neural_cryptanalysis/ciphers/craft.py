@@ -20,6 +20,13 @@ class CraftCipher(BlockCipher):
             0x8, 0x9, 0x1, 0x5, 0x0, 0x2, 0x4, 0x6]
 
     # Cross-column permutation for maximum avalanche diffusion
+    """2. AddConstant      : s[0] ^= RC[r]
+        3. SubCells         : nibble-wise S-box
+        4. PermNibbles      : nibble permutation P (gather: out[i] = s[P[i]])
+        5. MixNibbles       : column-wise involutory linear mixing
+    Final whitening after last round.
+
+    NOTE on avalanche: CRAFT's PermNibbles rotates columns cyclically (col i -> col i+1 mod 4)"""
     PERM_P = [14,  4, 10,  6,
               15,  1,  8,  9,
                3,  2,  5, 13,
