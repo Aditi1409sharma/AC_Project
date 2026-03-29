@@ -1,0 +1,147 @@
+================================================================
+  NEURAL CRYPTANALYSIS PROJECT — QUICK START GUIDE
+================================================================
+
+REQUIREMENTS
+------------
+Python 3.10+
+Install dependencies:
+    pip install torch numpy tqdm
+
+
+PROJECT STRUCTURE
+-----------------
+AC_Project-main/
+  neural_cryptanalysis/
+    ciphers/        - Block cipher implementations
+    data/           - Dataset generation utilities
+    models/         - MLP, CNN, Siamese model definitions
+    representations/- Input feature encodings (delta, concat, etc.)
+    experiments/    - Training and benchmark scripts
+    utils/          - Config and cipher registry
+  cipher_verification_output.txt  - Cipher test results
+  model_benchmark_output.txt      - Model benchmark results
+  guide.txt                       - This file
+
+
+ALL COMMANDS MUST BE RUN FROM INSIDE AC_Project-main/
+------------------------------------------------------
+
+
+================================================================
+  STEP 1 — VERIFY ALL CIPHERS
+================================================================
+
+Runs all 8 ciphers with fixed inputs, checks test vectors,
+avalanche effect, and differential outputs.
+Results saved to cipher_verification_output.txt
+
+    python neural_cryptanalysis/ciphers/verify_all_ciphers.py
+
+Expected output: all 8 ciphers show PASS in the summary.
+
+
+================================================================
+  STEP 2 — GENERATE A DATASET
+================================================================
+
+Generates a labeled dataset for a chosen cipher and saves it
+to neural_cryptanalysis/data/datasets/
+
+Example (Simon32, 4 rounds, delta representation, 10000 samples):
+
+    python -c "
+    from neural_cryptanalysis.data.generator import generate_dataset, save_dataset
+    from neural_cryptanalysis.utils.config   import get_cipher, DELTA_P
+
+    cipher = get_cipher('simon32')
+    X, y   = generate_dataset(cipher, rounds=4, n_samples=10000,
+                               delta_p=DELTA_P['simon32'],
+                               representation='concat')
+    save_dataset(X, y, 'simon_concat_r4')
+    print('Saved:', X.shape, y.shape)
+    "
+
+Available ciphers:
+    simon32, gift64, gift128, skinny64, skinny128,
+    craft, pyjamask, present
+
+Available representations:
+    delta, concat, bitslice, joint, statistical
+
+
+================================================================
+  STEP 3 — TRAIN INDIVIDUAL MODELS
+================================================================
+
+--- MLP ---
+    python -m neural_cryptanalysis.experiments.train_mlp
+
+--- CNN ---
+    python -m neural_cryptanalysis.experiments.train_cnn \
+        --dataset neural_cryptanalysis/data/datasets/simon_concat_r4 \
+        --epochs 10 --batch 128 --lr 1e-3
+
+--- Siamese ---
+    python -m neural_cryptanalysis.experiments.train_siamese \
+        --dataset neural_cryptanalysis/data/datasets/simon_concat_r4 \
+        --epochs 10 --batch 128 --lr 1e-3
+
+Optional flags (CNN and Siamese):
+    --save path/to/model.pt     Save trained weights
+    --epochs N                  Number of training epochs
+    --batch  N                  Batch size
+    --lr     F                  Learning rate
+
+
+================================================================
+  STEP 4 — RUN FULL BENCHMARK (all 3 models at once)
+================================================================
+
+Trains MLP, CNN, and Siamese on the same dataset and saves
+a full report to model_benchmark_output.txt
+
+    python -m neural_cryptanalysis.experiments.benchmark_models
+
+Results are printed to console and saved automatically.
+
+
+================================================================
+  CIPHER REFERENCE
+================================================================
+
+  Cipher      Block  Key    Full Rounds
+  --------    -----  ---    -----------
+  simon32       32    64        32
+  gift64        64   128        28
+  gift128      128   128        40
+  skinny64      64    64        32
+  skinny128    128   128        40
+  craft         64   128        32  (key = K||T, 64+64 bits)
+  pyjamask      96   128        14
+  present       64    80        31
+
+
+================================================================
+  MODEL REFERENCE
+================================================================
+
+  Model     File                    Input           Params
+  -------   ----                    -----           ------
+  MLP       models/mlp.py           concat (flat)   ~800K
+  CNN       models/cnn.py           concat (flat)   ~313K
+  Siamese   models/siamese.py       concat (flat)    ~25K
+
+  All models output a single sigmoid value in [0, 1]:
+    > 0.5  ->  predicted CIPHER
+    < 0.5  ->  predicted RANDOM PERMUTATION
+
+
+================================================================
+  OUTPUT FILES
+================================================================
+
+  cipher_verification_output.txt   - Cipher test results
+  model_benchmark_output.txt       - Model accuracy results
+
+================================================================
