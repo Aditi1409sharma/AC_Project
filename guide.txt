@@ -27,6 +27,9 @@ AC_Project-main/
   experiments_output.txt           - Full experiment results (3 experiments)
   guide.txt                        - This file
 
+  dataset - https://drive.google.com/file/d/1_FBp5ecmVLKxs90fbVnj49jbUIShJ3D6/view?usp=sharing
+  Please download and unzip the dataset in the data folder
+
 
 ALL COMMANDS MUST BE RUN FROM INSIDE AC_Project-main/
 ------------------------------------------------------
