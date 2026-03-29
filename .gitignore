@@ -1,0 +1,66 @@
+# Virtual environments
+
+venv/
+env/
+ENV/
+.venv/
+
+# Python cache / compiled files
+
+**pycache**/
+*.pyc
+*.pyo
+*.pyd
+*.pyc.*
+
+# Jupyter notebooks
+
+.ipynb_checkpoints/
+
+# Environment variables
+
+.env
+
+# Logs & temp files
+
+*.log
+*.tmp
+*.swp
+
+# OS files
+
+.DS_Store
+Thumbs.db
+
+# IDE/editor folders
+
+.vscode/
+.idea/
+
+# # PyTorch / ML models & checkpoints
+
+# *.pt
+# *.pth
+# *.ckpt
+# checkpoints/
+# models/
+
+# Data (ignore large datasets)
+
+data/
+datasets/
+
+# # Outputs & results
+
+# outputs/
+# results/
+
+# Python packaging
+
+build/
+dist/
+*.egg-info/
+
+# Cache
+
+.cache/

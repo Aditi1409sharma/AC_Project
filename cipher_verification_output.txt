@@ -1,0 +1,292 @@
+============================================================
+  CIPHER VERIFICATION REPORT
+  Neural Cryptanalysis Project
+============================================================
+
+============================================================
+  1. SIMON 32/64  (block=32, key=64, rounds=32)
+============================================================
+
+  Plaintext  : 0x65656877
+  Key        : 0x1918111009080100
+  Expected   : 0xc69be9bb
+  Got (r=32) : 0xc69be9bb
+  Test vector: PASS
+
+  --- Reduced-round outputs ---
+
+    r= 1  ->  0xbca26565
+    r= 2  ->  0xbee3bca2
+    r= 3  ->  0x37babee3
+    r= 4  ->  0x532737ba
+    r= 5  ->  0x2ca65327
+    r= 6  ->  0x57fa2ca6
+    r= 8  ->  0x873b8fcf
+    r=10  ->  0xb397687c
+    r=16  ->  0x6fc21587
+    r=32  ->  0xc69be9bb
+
+  --- Differential (ΔP = 0x40000000) ---
+
+    r=4  C=0x532737ba  C'=0x5f330e3  ΔC=0x56d40759
+    r=6  C=0x57fa2ca6  C'=0x4c4b55e8  ΔC=0x1bb1794e
+    r=8  C=0x873b8fcf  C'=0x50453a15  ΔC=0xd77eb5da
+
+  --- Avalanche (r=8, flipping 16 LSBs) ---
+
+    Avg bit flips: 15.44 / 16.0 ideal  (good)
+
+============================================================
+  2. GIFT-64  (block=64, key=128, rounds=28)
+============================================================
+
+  Plaintext  : 0x0
+  Key        : 0x0
+  Got (r=28) : 0x9807fec2b3e79519
+  Non-zero   : PASS
+
+  --- Reduced-round outputs ---
+
+    r= 1  ->  0x111111111111110
+    r= 2  ->  0x3babaaa28aaabaa9
+    r= 3  ->  0xeb2373bfdfbf29a8
+    r= 4  ->  0xdf77a9b554494feb
+    r= 5  ->  0x4ee4a9e6876e8f5b
+    r= 6  ->  0xc365193eb3eab8f
+    r= 8  ->  0x1a9bf8d06a842ad4
+    r=10  ->  0xca25d1a1e54e27
+    r=14  ->  0x31fe742b461814a3
+    r=28  ->  0x9807fec2b3e79519
+
+  --- Differential (ΔP = 0x0000000000000001) ---
+
+    r=4  C=0xdf77a9b554494feb  C'=0x49aa4d52cfc2ee10  ΔC=0x96dde4e79b8ba1fb
+    r=6  C=0xc365193eb3eab8f  C'=0x743c864aa926f9f0  ΔC=0x780ad7d94218527f
+    r=8  C=0x1a9bf8d06a842ad4  C'=0x5d5bc64605cbd2f4  ΔC=0x47c03e966f4ff820
+
+  --- Avalanche (r=10, flipping 16 LSBs) ---
+
+    Avg bit flips: 31.69 / 32.0 ideal  (good)
+
+============================================================
+  3. GIFT-128  (block=128, key=128, rounds=40)
+============================================================
+
+  Plaintext  : 0x0
+  Key        : 0x0
+  Got (r=40) : 0x2f166c8f4d26f8deeeac4c2b01f9c730
+  Non-zero   : PASS
+
+  --- Reduced-round outputs ---
+
+    r= 1  ->  0x1111111111111111111111111111110
+    r= 2  ->  0x3baaaaabaaaaaaa28aaaaaaabaaaaaa9
+    r= 3  ->  0xeaaa3b3bf3b3bbfb9fbfbbbf2bb9abb8
+    r= 4  ->  0xacf6e67eb6d6fff39d6f4753a6c7f746
+    r= 5  ->  0xe90fb29b0b6eddb4b93e4f33703c3c5f
+    r= 6  ->  0xc473559e95b1ce0d5e14bedda716dc57
+    r= 8  ->  0xf2f46eb7cfef698db2e694e77de0144e
+    r=10  ->  0xe540cb3b5d4d929eabb2466c648a415b
+    r=20  ->  0xe80c6ee11f8a26870fce6a527433e132
+    r=40  ->  0x2f166c8f4d26f8deeeac4c2b01f9c730
+
+  --- Differential (ΔP = 0x1) ---
+
+    r=4  ΔC=0x2c2280aa1061405328b098a81894d419  HW=42
+    r=6  ΔC=0x7c1ed9eea1214ed1fd14231b08462d9d  HW=62
+    r=8  ΔC=0x30690d0fb1d58c81ae6989d2b87e1404  HW=56
+
+  --- Avalanche (r=10, flipping 16 LSBs) ---
+
+    Avg bit flips: 66.62 / 64.0 ideal  (good)
+
+============================================================
+  4. SKINNY-64-64  (block=64, key=64, rounds=32)
+============================================================
+
+  Plaintext  : 0x6034f957724d19d
+  Key        : 0xf5269826fc681238
+  Expected   : 0xbb39dfb2429b8ac7
+  Got (r=32) : 0xbb39dfb2429b8ac7
+  Test vector: PASS
+
+  --- Reduced-round outputs ---
+
+    r= 1  ->  0xde9327e659e1b67d
+    r= 2  ->  0x42171f72d90e69fa
+    r= 3  ->  0x77093f93331af85b
+    r= 4  ->  0x9cf4c30b4acea62b
+    r= 5  ->  0x7c4312a31dab5596
+    r= 6  ->  0x23f5d69164b48bdf
+    r= 8  ->  0x429708a0d06cca08
+    r=10  ->  0x7c734149298185d7
+    r=16  ->  0xd2ad3598f55e17a8
+    r=32  ->  0xbb39dfb2429b8ac7
+
+  --- Differential (ΔP = 0x0000000000000001) ---
+
+    r=4  C=0x9cf4c30b4acea62b  C'=0x9244c8bb48cdaf9b  ΔC=0xeb00bb0020309b0
+    r=6  C=0x23f5d69164b48bdf  C'=0xd5503adbbddfbe9a  ΔC=0xf6a5ec4ad96b3545
+    r=8  C=0x429708a0d06cca08  C'=0x631d9a48e20e6ec  ΔC=0x44a6d1045e4c2ce4
+
+  --- Avalanche (r=8, flipping 16 LSBs) ---
+
+    Avg bit flips: 31.81 / 32.0 ideal  (good)
+
+============================================================
+  5. SKINNY-128-128  (block=128, key=128, rounds=40)
+============================================================
+
+  Plaintext  : 0x0
+  Key        : 0x0
+  Got (r=40) : 0x69f9ef56c63f9ad163db3eb798b3d15d
+  Non-zero   : PASS
+
+  --- Reduced-round outputs ---
+
+    r= 1  ->  0x64656765646565650000020001000200
+    r= 2  ->  0x11abaf8d1ea4ada4ce78c3c174c1cac1
+    r= 3  ->  0x87aeac3c8bbabb209f1384620d3026f1
+    r= 4  ->  0x1865b1f1360900036e84a379bda57b82
+    r= 5  ->  0x28a9f9b29aa4ceca53e37aee8b55c141
+    r= 6  ->  0x63333dd4dbb6f2ea42545e8907b9b5fc
+    r= 8  ->  0x25e55ff9c96f72b1da877d9a3e7e35cd
+    r=10  ->  0x77d6656c907d4331f6caa328881a4bed
+    r=20  ->  0x62431fdb01ac55b9d9058cb4e99c96c
+    r=40  ->  0x69f9ef56c63f9ad163db3eb798b3d15d
+
+  --- Differential (ΔP = 0x1) ---
+
+    r=4  ΔC=0x6b0d0000060d0000b2000900b40d00  HW=26
+    r=6  ΔC=0x131814e2be6bed3211ae6509afc5ede2  HW=64
+    r=8  ΔC=0x22b830d4f43f8a9ffe641f33a6c97dad  HW=70
+
+  --- Avalanche (r=10, flipping 16 LSBs) ---
+
+    Avg bit flips: 65.75 / 64.0 ideal  (good)
+
+============================================================
+  6. CRAFT  (block=64, key=64+64 tweak, rounds=32)
+============================================================
+
+  Plaintext  : 0x0
+  Key (K||T) : 0x0
+  Got (r=32) : 0x8940c668122b394c
+  Non-zero   : PASS
+
+  Plaintext  : 0xffffffffffffffff
+  Key (K||T) : 0x123456789abcdef0123456789abcdef
+  Got (r=32) : 0x6871aa26bffacc11
+  Non-zero   : PASS
+
+  --- Reduced-round outputs (K=0, T=0) ---
+
+    r= 1  ->  0xacccacccaccccccc
+    r= 2  ->  0x1010110011100110
+    r= 3  ->  0xaacccccacacaacac
+    r= 4  ->  0xd010c111c0101101
+    r= 5  ->  0xfa0c96aaf00ca60c
+    r= 6  ->  0x2d82e52fe8bcc452
+    r= 8  ->  0xa4e0eefb79408c1f
+    r=10  ->  0x5be8136a79414d86
+    r=16  ->  0x2b58efee595bf09c
+    r=32  ->  0x8940c668122b394c
+
+  --- Differential (ΔP = 0x0000000000000001) ---
+
+    r=4  C=0xd010c111c0101101  C'=0xf011e101f1101001  ΔC=0x2001201031000100
+    r=6  C=0x2d82e52fe8bcc452  C'=0x6ee28c2d92ceed12  ΔC=0x436069027a722940
+    r=8  C=0xa4e0eefb79408c1f  C'=0x8152c3b43ff4606e  ΔC=0x25b22d4f46b4ec71
+
+  --- Avalanche (r=8, flipping 16 LSBs) ---
+
+    Avg bit flips: 32.19 / 32.0 ideal  (good)
+
+============================================================
+  7. PYJAMASK-96  (block=96, key=128, rounds=14)
+============================================================
+
+  Plaintext  : 0x0
+  Key        : 0x0
+  Got (r=14) : 0x9108ede917a5f0c576e3db05
+  Non-zero   : PASS
+
+  Plaintext  : 0x123456789abcdef01234567
+  Key        : 0x123456789abcdef0123456789abcdef
+  Got (r=14) : 0x54d1c06f8b01c0ce4b366458
+  Non-zero   : PASS
+
+  --- Reduced-round outputs (PT=0, K=0) ---
+
+    r= 1  ->  0x0
+    r= 2  ->  0x98cc5170000000000000000
+    r= 3  ->  0x834fcb50aa5a46526a5e8a2
+    r= 4  ->  0xb816a9545142e12f809f0f62
+    r= 5  ->  0xd5ddb51ce8cd07017dbf7180
+    r= 6  ->  0x529421403e881bea5e90832e
+    r= 7  ->  0xdded66fc2911664bb4b1384a
+    r= 8  ->  0x8dd1624db4fed6bdd6e1a934
+    r=10  ->  0x36681bb0bb0de3100c797578
+    r=14  ->  0x9108ede917a5f0c576e3db05
+
+  --- Differential (ΔP = 0x000000000000000000000001) ---
+
+    r=4  C=0xb816a9545142e12f809f0f62  C'=0xcc4116165a0fa0718788f468  ΔC=0x7457bf420b4d415e0717fb0a
+    r=6  C=0x529421403e881bea5e90832e  C'=0x89d43cb4d6784aaa7765b82d  ΔC=0xdb401df4e8f0514029f53b03
+    r=8  C=0x8dd1624db4fed6bdd6e1a934  C'=0x361e463815aad391cce7b6e5  ΔC=0xbbcf2475a154052c1a061fd1
+
+  --- Avalanche (r=8, flipping 16 LSBs) ---
+
+    Avg bit flips: 48.06 / 48.0 ideal  (good)
+
+============================================================
+  8. PRESENT-80  (block=64, key=80, rounds=31)
+============================================================
+
+  Plaintext  : 0x0
+  Key        : 0x0
+  Expected   : 0x5579c1387b228445
+  Got (r=31) : 0x5579c1387b228445
+  Test vector: PASS
+
+  --- Reduced-round outputs ---
+
+    r= 1  ->  0x3fffffff00000000
+    r= 2  ->  0xd0ff18ffff008001
+    r= 3  ->  0x2036c237b4c88c08
+    r= 4  ->  0xc3c2c126b759233b
+    r= 5  ->  0xd1d7a858529e446c
+    r= 6  ->  0x182f6a61afa2fd2f
+    r= 8  ->  0x6ba06c48b513e6cc
+    r=10  ->  0x89ebc42d4c284e01
+    r=16  ->  0x79a85748fb63901e
+    r=31  ->  0x5579c1387b228445
+
+  --- Differential (ΔP = 0x0000000000000001) ---
+
+    r=4  C=0xc3c2c126b759233b  C'=0xd2e8c08db6da2291  ΔC=0x112a01ab018301aa
+    r=6  C=0x182f6a61afa2fd2f  C'=0xc60c2ac2b9246aa5  ΔC=0xde2340a31686978a
+    r=8  C=0x6ba06c48b513e6cc  C'=0x938e7ca933617edb  ΔC=0xf82e10e186729817
+
+  --- Avalanche (r=8, flipping 16 LSBs) ---
+
+    Avg bit flips: 30.12 / 32.0 ideal  (good)
+
+============================================================
+  SUMMARY
+============================================================
+
+  Cipher          Block    Key  Rounds  Status
+  --------------------------------------------------
+  simon32            32     64      32  PASS (test vector)
+  skinny64           64     64      32  PASS (test vector)
+  present            64     80      31  PASS (test vector)
+  gift64             64    128      28  PASS (non-zero output)
+  gift128           128    128      40  PASS (non-zero output)
+  skinny128         128    128      40  PASS (non-zero output)
+  craft              64    128      32  PASS (non-zero output)
+  pyjamask           96    128      14  PASS (non-zero output)
+
+============================================================
+  END OF REPORT
+============================================================
