@@ -88,26 +88,20 @@ def main():
     cipher = get_cipher(CIPHER_NAME)
     delta  = DELTA_P[CIPHER_NAME]
 
-    representations = {
-        "delta"      : "concat",   # delta uses concat key but delta rep
-        "concat"     : "concat",
-        "bitslice"   : "bitslice",
-        "joint"      : "joint",
-        "statistical": "statistical",
-    }
-
     results = {}
 
     # Per-representation config: (epochs, lr)
     rep_config = {
         "delta"      : (10, 1e-3),
         "concat"     : (10, 1e-3),
+        "raw"        : (10, 1e-3),
+        "word"       : (10, 1e-3),
         "bitslice"   : (10, 1e-3),
-        "statistical": (15, 5e-4),   # more epochs, lower LR for richer features
-        "joint"      : (15, 5e-4),   # more epochs for larger input
+        "statistical": (20, 3e-4),
+        "joint"      : (15, 5e-4),
     }
 
-    for rep_name in ["delta", "concat", "bitslice", "statistical", "joint"]:
+    for rep_name in ["delta", "concat", "raw", "word", "bitslice", "statistical", "joint"]:
         log(f"  Generating dataset: representation='{rep_name}'...")
         X, y = generate_dataset(cipher, rounds=ROUNDS, n_samples=N_SAMPLES,
                                  delta_p=delta, representation=rep_name)
@@ -134,8 +128,10 @@ def main():
     notes = {
         "delta"      : "Best signal — directly encodes differential pattern (C XOR C')",
         "concat"     : "Full information — model learns relations freely",
+        "raw"        : "Identical to concat but explicit float32 — same accuracy as concat (~98%)",
+        "word"       : "Word-level (16-bit) normalised — preserves cipher word structure",
         "bitslice"   : "Bit-position aligned — ideal for CNN local pattern detection",
-        "statistical": "Interpretable but weak — only 3 features (HW-based)",
+        "statistical": "Rich 59-feature vector — HW + nibble/byte dist + XOR bits + autocorr",
         "joint"      : "Richest input — includes plaintext, useful for white-box analysis",
     }
 
@@ -146,8 +142,10 @@ def main():
     log("  Key Takeaways:")
     log("  - delta      : most aligned with classical differential cryptanalysis")
     log("  - concat     : flexible, works well with MLP and Siamese")
+    log("  - raw        : float32 variant of concat, same accuracy profile")
+    log("  - word       : word-level structure — good for word-oriented ciphers")
     log("  - bitslice   : preserves bit-position structure, best for CNN")
-    log("  - statistical: interpretable but too compressed (3 features only)")
+    log("  - statistical: rich 59-feature vector — HW + nibble/byte + XOR bits + autocorr")
     log("  - joint      : strongest in white-box setting (plaintext visible)")
     log()
     log(f"  Baseline (random) : 0.5000")

@@ -5,25 +5,37 @@
 
 ============================================================
   EXPERIMENT 1: Accuracy vs Number of Rounds
-  Cipher: simon32  |  Representation: concat
+  Primary cipher: simon32  |  Representation: concat
+  Also shows: simon32, gift64, present (Siamese, delta rep)
 ============================================================
 
-  Rounds        MLP      CNN    Siamese
-  --------------------------------------
-  r=2        0.9200   0.9900     0.9925
-  r=3        0.5875   0.9825     0.9975
-  r=4        0.5450   0.9025     0.9700
-  r=5        0.6575   0.6675     0.7825
-  r=6        0.5075   0.5750     0.5300
-  r=7        0.4825   0.5425     0.5450
-  r=8        0.5150   0.5250     0.4750
-  r=9        0.5050   0.5250     0.5150
+  Part A — SIMON32 | All models | concat rep
+  Rounds        MLP      CNN    Siamese     MINE
+  ----------------------------------------------
+  r=2        0.8975   0.9925     1.0000   0.4750
+  r=3        0.7250   0.9825     1.0000   0.4975
+  r=4        0.8475   0.9025     0.9700   0.4850
+  r=5        0.5050   0.6100     0.7625   0.4875
+  r=6        0.5275   0.5200     0.5200   0.5375
+  r=7        0.4850   0.5075     0.4700   0.4775
+  r=8        0.5050   0.5050     0.5125   0.5075
+  r=9        0.4875   0.4775     0.4750   0.4975
 
-  Max distinguishable round (MLP): r=5  acc=0.6575
-  Max distinguishable round (CNN): r=6  acc=0.5750
-  Max distinguishable round (Siamese): r=5  acc=0.7825
+  Max distinguishable round (MLP): r=4  acc=0.8475
+  Max distinguishable round (CNN): r=5  acc=0.6100
+  Max distinguishable round (Siamese): r=5  acc=0.7625
+  Max distinguishable round (MINE): r=2  acc=0.4750
 
-  Plot saved: C:\Users\ridex.DESKTOP-GN22UPQ.000\Downloads\AC_Project-main\AC_Project-main\plots\acc_vs_rounds.png
+  Plot saved: C:\Users\ridex.DESKTOP-GN22UPQ.000\Downloads\AC_Project\plots\acc_vs_rounds.png
+  Part B — Multi-cipher | Siamese | delta rep
+  Cipher       Rounds tested         Max dist. round
+  ----------------------------------------------------
+  simon32      [2, 3, 4, 5, 6, 7, 8, 9] r=7 (0.5550)
+  gift64       [2, 3, 4, 5, 6, 7, 8] r=4 (0.8050)
+  present      [2, 3, 4, 5, 6, 7, 8] r=5 (0.5925)
+  craft        [2, 3, 4, 5, 6, 7]   r=3 (0.9850)
+
+  Plot saved: C:\Users\ridex.DESKTOP-GN22UPQ.000\Downloads\AC_Project\plots\acc_vs_rounds_multiciper.png
 ============================================================
   EXPERIMENT 2: Accuracy vs Representation
   Cipher: simon32  |  Rounds: 4  |  Model: MLP
@@ -32,53 +44,61 @@
   Representation    Input Dim   Accuracy
   ----------------------------------------
   delta                    32     0.9975
-  concat                   64     0.9025
-  bitslice                 64     0.4950
-  statistical              20     0.9125
-  joint                   192     0.9975
+  concat                   64     0.5700
+  raw                      64     0.8425
+  word                      6     0.8925
+  bitslice                 64     0.9000
+  statistical              59     0.9975
+  joint                   192     0.9950
 
-  Plot saved: C:\Users\ridex.DESKTOP-GN22UPQ.000\Downloads\AC_Project-main\AC_Project-main\plots\acc_vs_representation.png
+  Plot saved: C:\Users\ridex.DESKTOP-GN22UPQ.000\Downloads\AC_Project\plots\acc_vs_representation.png
 ============================================================
   EXPERIMENT 3: Accuracy vs Model Architecture
-  Cipher: simon32  |  Rounds: 4  |  Representation: concat
+  Cipher: simon32  |  Rounds: 4  |  N=4000  |  Epochs: 15
+  MLP+MINE: delta rep  |  CNN+Siamese: concat rep
 ============================================================
 
-  Model            Params   Accuracy
-  ------------------------------------
-  MLP             804,737     0.6550
-  CNN             313,141     0.8700
-  Siamese          24,897     0.9725
+  Model            Params      Rep   Accuracy
+  --------------------------------------------
+  MLP             753,537    delta     1.0000
+  CNN             313,141   concat     0.9413
+  Siamese          24,897   concat     0.9950
+  MINE            115,457   concat     0.5238
 
-  Plot saved: C:\Users\ridex.DESKTOP-GN22UPQ.000\Downloads\AC_Project-main\AC_Project-main\plots\acc_vs_model.png
+  Plot saved: C:\Users\ridex.DESKTOP-GN22UPQ.000\Downloads\AC_Project\plots\acc_vs_model.png
 ============================================================
   FINAL SUMMARY
 ============================================================
 
-  Exp 1 — Accuracy vs Rounds (MLP, concat, simon32):
-  Rounds        MLP      CNN    Siamese
-  2          0.9200   0.9900     0.9925
-  3          0.5875   0.9825     0.9975
-  4          0.5450   0.9025     0.9700
-  5          0.6575   0.6675     0.7825
-  6          0.5075   0.5750     0.5300
-  7          0.4825   0.5425     0.5450
-  8          0.5150   0.5250     0.4750
-  9          0.5050   0.5250     0.5150
+  Exp 1 — Accuracy vs Rounds (simon32, concat):
+  Rounds        MLP      CNN    Siamese     MINE
+  2          0.8975   0.9925     1.0000   0.4750
+  3          0.7250   0.9825     1.0000   0.4975
+  4          0.8475   0.9025     0.9700   0.4850
+  5          0.5050   0.6100     0.7625   0.4875
+  6          0.5275   0.5200     0.5200   0.5375
+  7          0.4850   0.5075     0.4700   0.4775
+  8          0.5050   0.5050     0.5125   0.5075
+  9          0.4875   0.4775     0.4750   0.4975
 
   Exp 2 — Accuracy vs Representation (MLP, r=4):
   delta            0.9975
-  concat           0.9025
-  bitslice         0.4950
-  statistical      0.9125
-  joint            0.9975
+  concat           0.5700
+  raw              0.8425
+  word             0.8925
+  bitslice         0.9000
+  statistical      0.9975
+  joint            0.9950
 
-  Exp 3 — Accuracy vs Model (concat, r=4):
-  MLP          0.6550
-  CNN          0.8700
-  Siamese      0.9725
+  Exp 3 — Accuracy vs Model (r=4):
+  MLP          1.0000
+  CNN          0.9413
+  Siamese      0.9950
+  MINE         0.5238
 
   Plots saved in: plots/
     - acc_vs_rounds.png
+    - acc_vs_rounds_multiciper.png
     - acc_vs_representation.png
     - acc_vs_model.png
 ============================================================

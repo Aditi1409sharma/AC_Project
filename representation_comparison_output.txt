@@ -7,19 +7,25 @@
   Samples : 6000    |  Epochs : 10  |  Model: MLP
 
   Generating dataset: representation='delta'...
-    input_dim=32      accuracy=0.9967
+    input_dim=32      accuracy=1.0000
 
   Generating dataset: representation='concat'...
-    input_dim=64      accuracy=0.9767
+    input_dim=64      accuracy=0.9858
+
+  Generating dataset: representation='raw'...
+    input_dim=64      accuracy=0.9758
+
+  Generating dataset: representation='word'...
+    input_dim=6       accuracy=0.9708
 
   Generating dataset: representation='bitslice'...
-    input_dim=64      accuracy=0.9542
+    input_dim=64      accuracy=0.9592
 
   Generating dataset: representation='statistical'...
-    input_dim=20      accuracy=0.9050
+    input_dim=59      accuracy=0.9983
 
   Generating dataset: representation='joint'...
-    input_dim=192     accuracy=0.9950
+    input_dim=192     accuracy=0.9933
 
 =================================================================
   SUMMARY — Representation vs Accuracy
@@ -27,17 +33,21 @@
 
   Representation    Input Dim   Accuracy  Effect / Notes
   -----------------------------------------------------------------
-  delta                    32     0.9967  Best signal — directly encodes differential pattern (C XOR C')
-  concat                   64     0.9767  Full information — model learns relations freely
-  bitslice                 64     0.9542  Bit-position aligned — ideal for CNN local pattern detection
-  statistical              20     0.9050  Interpretable but weak — only 3 features (HW-based)
-  joint                   192     0.9950  Richest input — includes plaintext, useful for white-box analysis
+  delta                    32     1.0000  Best signal — directly encodes differential pattern (C XOR C')
+  concat                   64     0.9858  Full information — model learns relations freely
+  raw                      64     0.9758  Identical to concat but float32 — same info, explicit dtype
+  word                      6     0.9708  Word-level (16-bit) normalised — preserves cipher word structure
+  bitslice                 64     0.9592  Bit-position aligned — ideal for CNN local pattern detection
+  statistical              59     0.9983  Rich 59-feature vector — HW + nibble/byte dist + XOR bits + autocorr
+  joint                   192     0.9933  Richest input — includes plaintext, useful for white-box analysis
 
   Key Takeaways:
   - delta      : most aligned with classical differential cryptanalysis
   - concat     : flexible, works well with MLP and Siamese
+  - raw        : float32 variant of concat, same accuracy profile
+  - word       : word-level structure — good for word-oriented ciphers
   - bitslice   : preserves bit-position structure, best for CNN
-  - statistical: interpretable but too compressed (3 features only)
+  - statistical: rich 59-feature vector — HW + nibble/byte + XOR bits + autocorr
   - joint      : strongest in white-box setting (plaintext visible)
 
   Baseline (random) : 0.5000

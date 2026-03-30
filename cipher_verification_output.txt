@@ -306,63 +306,63 @@
   ----------------------------------------
   r=2          1.0000  YES               
   r=3          1.0000  YES                 (+0.0000)
-  r=4          0.9975  YES                 (-0.0025)
-  r=5          0.9337  YES                 (-0.0638)
-  r=6          0.6950  YES                 (-0.2388)
-  r=7          0.5525  YES                 (-0.1425)
-  r=8          0.5312  NO (near random)    (-0.0212)
-  r=9          0.4800  NO (near random)    (-0.0513)
+  r=4          1.0000  YES                 (+0.0000)
+  r=5          0.9363  YES                 (-0.0637)
+  r=6          0.6775  YES                 (-0.2588)
+  r=7          0.5975  YES                 (-0.0800)
+  r=8          0.5250  NO (near random)    (-0.0725)
+  r=9          0.5238  NO (near random)    (-0.0012)
 
 
   GIFT64
   Round      Accuracy    Distinguishable?
   ----------------------------------------
   r=2          1.0000  YES               
-  r=3          0.9888  YES                 (-0.0112)
-  r=4          0.8488  YES                 (-0.1400)
-  r=5          0.5713  YES                 (-0.2775)
-  r=6          0.4587  NO (near random)    (-0.1125)
-  r=7          0.5125  NO (near random)    (+0.0537)
-  r=8          0.5112  NO (near random)    (-0.0012)
-  r=9          0.5012  NO (near random)    (-0.0100)
+  r=3          0.9912  YES                 (-0.0088)
+  r=4          0.8363  YES                 (-0.1550)
+  r=5          0.5637  YES                 (-0.2725)
+  r=6          0.4800  NO (near random)    (-0.0837)
+  r=7          0.4688  NO (near random)    (-0.0112)
+  r=8          0.4900  NO (near random)    (+0.0212)
+  r=9          0.4863  NO (near random)    (-0.0037)
 
 
   PRESENT
   Round      Accuracy    Distinguishable?
   ----------------------------------------
   r=2          1.0000  YES               
-  r=3          1.0000  YES                 (+0.0000)
-  r=4          0.9150  YES                 (-0.0850)
-  r=5          0.6012  YES                 (-0.3138)
-  r=6          0.4975  NO (near random)    (-0.1037)
-  r=7          0.4913  NO (near random)    (-0.0062)
-  r=8          0.5250  NO (near random)    (+0.0338)
-  r=9          0.4863  NO (near random)    (-0.0388)
+  r=3          0.9988  YES                 (-0.0012)
+  r=4          0.9025  YES                 (-0.0963)
+  r=5          0.6088  YES                 (-0.2937)
+  r=6          0.5088  NO (near random)    (-0.1000)
+  r=7          0.4975  NO (near random)    (-0.0113)
+  r=8          0.4800  NO (near random)    (-0.0175)
+  r=9          0.4838  NO (near random)    (+0.0038)
 
 
   CRAFT
   Round      Accuracy    Distinguishable?
   ----------------------------------------
   r=2          1.0000  YES               
-  r=3          0.9850  YES                 (-0.0150)
-  r=4          0.4813  NO (near random)    (-0.5037)
-  r=5          0.4775  NO (near random)    (-0.0038)
-  r=6          0.5212  NO (near random)    (+0.0438)
-  r=7          0.5112  NO (near random)    (-0.0100)
-  r=8          0.4888  NO (near random)    (-0.0225)
-  r=9          0.5325  NO (near random)    (+0.0437)
+  r=3          0.9838  YES                 (-0.0162)
+  r=4          0.5062  NO (near random)    (-0.4775)
+  r=5          0.4988  NO (near random)    (-0.0075)
+  r=6          0.4838  NO (near random)    (-0.0150)
+  r=7          0.5025  NO (near random)    (+0.0187)
+  r=8          0.4788  NO (near random)    (-0.0237)
+  r=9          0.4850  NO (near random)    (+0.0062)
 
 
   PYJAMASK
   Round      Accuracy    Distinguishable?
   ----------------------------------------
   r=1          1.0000  YES               
-  r=2          0.4450  NO (near random)    (-0.5550)
-  r=3          0.4500  NO (near random)    (+0.0050)
-  r=4          0.4850  NO (near random)    (+0.0350)
-  r=5          0.5150  NO (near random)    (+0.0300)
-  r=6          0.4825  NO (near random)    (-0.0325)
-  r=7          0.5312  NO (near random)    (+0.0488)
+  r=2          0.6025  YES                 (-0.3975)
+  r=3          0.5238  NO (near random)    (-0.0787)
+  r=4          0.5138  NO (near random)    (-0.0100)
+  r=5          0.4950  NO (near random)    (-0.0188)
+  r=6          0.4925  NO (near random)    (-0.0025)
+  r=7          0.5162  NO (near random)    (+0.0237)
 
 ============================================================
   END OF REPORT
