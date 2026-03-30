@@ -272,6 +272,7 @@ Approach inspired by Gohr (2019) — differential neural cryptanalysis.
   |   |   +-- train_mlp.py             Standalone MLP training script
   |   |   +-- train_cnn.py             Standalone CNN training script
   |   |   +-- train_siamese.py         Standalone Siamese training script
+  |   |   +-- train_mine.py            Standalone MINE training script
   |   |
   |   +-- utils/
   |       +-- config.py            Cipher registry, DELTA_P, get_cipher()
@@ -344,6 +345,11 @@ Approach inspired by Gohr (2019) — differential neural cryptanalysis.
       python -m neural_cryptanalysis.experiments.train_siamese \
           --dataset neural_cryptanalysis/data/datasets/simon_concat_r4 \
           --epochs 10 --batch 128 --lr 1e-3
+
+  MINE (requires concat or raw):
+      python -m neural_cryptanalysis.experiments.train_mine \
+          --dataset neural_cryptanalysis/data/datasets/simon_concat_r4 \
+          --epochs 15 --batch 256 --lr 3e-4
 
   Optional flags (all scripts):
       --save path/to/model.pt     Save trained weights

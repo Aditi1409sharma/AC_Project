@@ -113,6 +113,11 @@ To generate ALL datasets (8 ciphers x 6 representations x 5 round counts):
         --dataset neural_cryptanalysis/data/datasets/simon_concat_r4 \
         --epochs 10 --batch 128 --lr 1e-3
 
+--- MINE (requires concat or raw representation) ---
+    python -m neural_cryptanalysis.experiments.train_mine \
+        --dataset neural_cryptanalysis/data/datasets/simon_concat_r4 \
+        --epochs 15 --batch 256 --lr 3e-4
+
 Optional flags (all three scripts):
     --save path/to/model.pt     Save trained weights
     --epochs N                  Number of training epochs

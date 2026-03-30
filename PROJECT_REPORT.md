@@ -258,7 +258,8 @@ AC_Project/
 │   │   ├── compare_representations.py  MLP accuracy across all 7 representations
 │   │   ├── train_mlp.py             Standalone MLP training script
 │   │   ├── train_cnn.py             Standalone CNN training script
-│   │   └── train_siamese.py         Standalone Siamese training script
+│   │   ├── train_siamese.py         Standalone Siamese training script
+│   │   └── train_mine.py            Standalone MINE training script
 │   └── utils/
 │       └── config.py                Cipher registry, DELTA_P, FULL_ROUNDS, get_cipher()
 ├── plots/
@@ -326,6 +327,11 @@ python -m neural_cryptanalysis.experiments.train_cnn \
 python -m neural_cryptanalysis.experiments.train_siamese \
     --dataset neural_cryptanalysis/data/datasets/simon_concat_r4 \
     --epochs 10 --batch 128 --lr 1e-3
+
+# MINE (requires concat or raw representation)
+python -m neural_cryptanalysis.experiments.train_mine \
+    --dataset neural_cryptanalysis/data/datasets/simon_concat_r4 \
+    --epochs 15 --batch 256 --lr 3e-4
 ```
 
 ### Step 5 — Run full model benchmark
