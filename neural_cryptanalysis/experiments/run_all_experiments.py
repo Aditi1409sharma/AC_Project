@@ -11,6 +11,7 @@ Run from AC_Project/:
     python -m neural_cryptanalysis.experiments.run_all_experiments
 """
 
+from importlib.resources import path
 import os
 import numpy as np
 import torch
@@ -27,8 +28,19 @@ from neural_cryptanalysis.models.cnn     import CNN
 from neural_cryptanalysis.models.siamese import SiameseNet
 from neural_cryptanalysis.models.mine    import MINE
 
+torch.manual_seed(42)
+np.random.seed(42)
+
 BASE     = os.path.normpath(os.path.join(os.path.dirname(__file__), "..", ".."))
 PLOT_DIR = os.path.join(BASE, "plots")
+ROUNDS_DIR = os.path.join(PLOT_DIR, "rounds")
+REP_DIR    = os.path.join(PLOT_DIR, "representation")
+MODEL_DIR  = os.path.join(PLOT_DIR, "model")
+CIPHER_DIR = os.path.join(PLOT_DIR, "cipher")
+HEATMAP_DIR= os.path.join(PLOT_DIR, "heatmap")
+
+for d in [ROUNDS_DIR, REP_DIR, MODEL_DIR, CIPHER_DIR, HEATMAP_DIR]:
+    os.makedirs(d, exist_ok=True)
 OUT_FILE = os.path.join(BASE, "experiments_output.txt")
 os.makedirs(PLOT_DIR, exist_ok=True)
 
@@ -55,6 +67,10 @@ def save_log():
 
 # ── Quick train + eval ────────────────────────────────────────────────────────
 def quick_train(model, X, y, epochs=EPOCHS, lr=LR, use_scheduler=False):
+    perm = np.random.permutation(len(X))
+    X = X[perm]
+    y = y[perm]
+
     X_t = torch.tensor(X.astype(np.float32))
     y_t = torch.tensor(y, dtype=torch.float32).unsqueeze(1)
     split = int(0.8 * len(X_t))
@@ -80,7 +96,10 @@ def quick_train(model, X, y, epochs=EPOCHS, lr=LR, use_scheduler=False):
     return correct / tot
 
 # ── Plot helpers ──────────────────────────────────────────────────────────────
-def save_bar(names, values, title, xlabel, ylabel, filename, color="steelblue"):
+def save_bar(names, values, title, xlabel, ylabel, filename, subdir="", color="steelblue"):
+    path = os.path.join(PLOT_DIR, subdir, filename)
+    os.makedirs(os.path.dirname(path), exist_ok=True)   # ✅ ADD THIS
+
     fig, ax = plt.subplots(figsize=(9, 5))
     bars = ax.bar(names, [v * 100 for v in values], color=color, edgecolor="black", width=0.5)
     ax.set_title(title, fontsize=14, fontweight="bold")
@@ -101,74 +120,94 @@ def save_bar(names, values, title, xlabel, ylabel, filename, color="steelblue"):
     plt.close()
     log(f"  Plot saved: {path}")
 
-def save_line(rounds, values_dict, title, filename):
+def save_line(rounds, values_dict, title, filename, subdir=""):
+    path = os.path.join(PLOT_DIR, subdir, filename)
+    os.makedirs(os.path.dirname(path), exist_ok=True)   # ✅ ensure folder exists
+
     fig, ax = plt.subplots(figsize=(9, 5))
     colors = ["steelblue", "darkorange", "green", "crimson", "purple"]
+
     for (label, vals), color in zip(values_dict.items(), colors):
         ax.plot(rounds, [v * 100 for v in vals], marker="o",
                 label=label, color=color, linewidth=2)
+
     ax.set_title(title, fontsize=14, fontweight="bold")
     ax.set_xlabel("Number of Rounds", fontsize=12)
     ax.set_ylabel("Test Accuracy (%)", fontsize=12)
     ax.set_ylim(40, 105)
     ax.axhline(50, color="gray", linestyle="--", linewidth=1, label="Random baseline")
+
     ax.legend()
     ax.grid(True, alpha=0.3)
     plt.tight_layout()
-    path = os.path.join(PLOT_DIR, filename)
+
     plt.savefig(path, dpi=150)
     plt.close()
     log(f"  Plot saved: {path}")
 
-def save_single_cipher_line(cipher_name, rounds, accs, filename):
-    """Single-cipher accuracy vs rounds line plot."""
+def save_single_cipher_line(cipher_name, rounds, accs, filename, subdir=""):
+    path = os.path.join(PLOT_DIR, subdir, filename)
+    os.makedirs(os.path.dirname(path), exist_ok=True)
+
     fig, ax = plt.subplots(figsize=(8, 5))
+
     ax.plot(rounds, [a * 100 for a in accs], marker="o",
             color="steelblue", linewidth=2.5, markersize=7)
-    # Shade the distinguishable region (acc > 55%)
+
+    # Highlight distinguishable region
     for r, a in zip(rounds, accs):
         if a > 0.55:
             ax.axvspan(r - 0.4, r + 0.4, alpha=0.08, color="steelblue")
+
     ax.set_title(f"Accuracy vs Rounds — {cipher_name.upper()} (MLP, delta)",
                  fontsize=14, fontweight="bold")
     ax.set_xlabel("Number of Rounds", fontsize=12)
     ax.set_ylabel("Test Accuracy (%)", fontsize=12)
+
     ax.set_xticks(rounds)
     ymin = 0 if min(accs) < 0.6 else 40
     ax.set_ylim(ymin, 108)
-    ax.axhline(50, color="red", linestyle="--", linewidth=1.2, label="Random baseline (50%)")
-    # Annotate each point
+
+    ax.axhline(50, color="red", linestyle="--", linewidth=1.2, label="Random baseline")
+
     for r, a in zip(rounds, accs):
         ax.annotate(f"{a*100:.1f}%", (r, a * 100),
                     textcoords="offset points", xytext=(0, 8),
                     ha="center", fontsize=8.5)
+
     ax.legend()
     ax.grid(True, alpha=0.3)
     plt.tight_layout()
-    path = os.path.join(PLOT_DIR, filename)
+
     plt.savefig(path, dpi=150)
     plt.close()
     log(f"  Plot saved: {path}")
 
 
-def save_multi_line(cipher_rounds_dict, title, filename):
-    """Multi-cipher accuracy vs rounds plot."""
-    # 8 distinct colors for up to 8 ciphers
+def save_multi_line(cipher_rounds_dict, title, filename, subdir=""):
+    path = os.path.join(PLOT_DIR, subdir, filename)
+    os.makedirs(os.path.dirname(path), exist_ok=True)
+
     COLORS = ["steelblue", "darkorange", "green", "crimson",
               "purple", "brown", "deeppink", "teal"]
+
     fig, ax = plt.subplots(figsize=(10, 5))
+
     for (cipher_name, (rounds, accs)), color in zip(cipher_rounds_dict.items(), COLORS):
         ax.plot(rounds, [a * 100 for a in accs], marker="o",
                 label=cipher_name.upper(), color=color, linewidth=2)
+
     ax.set_title(title, fontsize=14, fontweight="bold")
     ax.set_xlabel("Number of Rounds", fontsize=12)
     ax.set_ylabel("Best Model Accuracy (%)", fontsize=12)
+
     ax.set_ylim(40, 105)
     ax.axhline(50, color="gray", linestyle="--", linewidth=1, label="Random baseline")
+
     ax.legend(fontsize=9, ncol=2)
     ax.grid(True, alpha=0.3)
     plt.tight_layout()
-    path = os.path.join(PLOT_DIR, filename)
+
     plt.savefig(path, dpi=150)
     plt.close()
     log(f"  Plot saved: {path}")
@@ -176,107 +215,271 @@ def save_multi_line(cipher_rounds_dict, title, filename):
 # ══════════════════════════════════════════════════════════════════════════════
 # EXPERIMENT 1 — Accuracy vs Rounds  (multi-model + multi-cipher)
 # ══════════════════════════════════════════════════════════════════════════════
-def exp1_accuracy_vs_rounds():
-    sep = "=" * 60
-    log(sep)
-    log("  EXPERIMENT 1: Accuracy vs Number of Rounds")
-    log(f"  Primary cipher: {CIPHER_NAME}  |  Representation: concat")
-    log(f"  Also shows: simon32, gift64, present (Siamese, delta rep)")
-    log(sep)
-    log()
+# def exp1_accuracy_vs_rounds():
+#     sep = "=" * 60
+#     log(sep)
+#     log("  EXPERIMENT 1: Accuracy vs Number of Rounds")
+#     log(f"  Primary cipher: {CIPHER_NAME}  |  Representation: delta")
+#     log(f"  Also shows: simon32, gift64, present (Siamese, delta rep)")
+#     log(sep)
+#     log()
 
-    # ── Part A: all 3 models on simon32 ──────────────────────────────────────
-    cipher     = get_cipher(CIPHER_NAME)
-    delta      = DELTA_P[CIPHER_NAME]
-    test_rounds = list(range(2, min(FULL_ROUNDS[CIPHER_NAME] + 1, 10)))
+#     # ── Part A: all 3 models on simon32 ──────────────────────────────────────
+#     cipher     = get_cipher(CIPHER_NAME)
+#     delta      = DELTA_P[CIPHER_NAME]
+#     test_rounds = list(range(2, min(FULL_ROUNDS[CIPHER_NAME] + 1, 10)))
 
-    log(f"  Part A — {CIPHER_NAME.upper()} | All models | concat rep")
-    log(f"  {'Rounds':<8} {'MLP':>8} {'CNN':>8} {'Siamese':>10} {'MINE':>8}")
-    log(f"  {'-'*46}")
+#     log(f"  Part A — {CIPHER_NAME.upper()} | All models | concat rep")
+#     log(f"  {'Rounds':<8} {'MLP':>8} {'CNN':>8} {'Siamese':>10} {'MINE':>8}")
+#     log(f"  {'-'*46}")
 
-    mlp_accs = []; cnn_accs = []; siam_accs = []; mine_accs = []
+#     mlp_accs = []; cnn_accs = []; siam_accs = []; mine_accs = []
 
-    for r in test_rounds:
-        X, y = generate_dataset(cipher, rounds=r, n_samples=N_SAMPLES,
-                                 delta_p=delta, representation="concat")
-        # Generate a larger dataset for MINE (needs more data to converge)
-        X_mine, y_mine = generate_dataset(cipher, rounds=r, n_samples=4000,
-                                           delta_p=delta, representation="concat")
-        dim = X.shape[1]
-        a_mlp  = quick_train(MLP(input_dim=dim),                          X, y)
-        a_cnn  = quick_train(CNN(input_dim=dim, num_filters=32),           X, y, lr=1e-3)
-        a_siam = quick_train(SiameseNet(branch_dim=dim//2, embed_dim=64),  X, y)
-        # MINE needs more epochs and lower LR to converge — use dedicated config
-        a_mine = quick_train(MINE(input_dim=dim, hidden_dim=512),          X_mine, y_mine,
-                             epochs=15, lr=3e-4, use_scheduler=True)
-        mlp_accs.append(a_mlp); cnn_accs.append(a_cnn)
-        siam_accs.append(a_siam); mine_accs.append(a_mine)
-        log(f"  r={r:<6} {a_mlp:>8.4f} {a_cnn:>8.4f} {a_siam:>10.4f} {a_mine:>8.4f}")
+#     for r in test_rounds:
+#         X, y = generate_dataset(cipher, rounds=r, n_samples=N_SAMPLES,
+#                                  delta_p=delta, representation="delta")
+#         # Generate a larger dataset for MINE (needs more data to converge)
+#         X_mine, y_mine = generate_dataset(cipher, rounds=r, n_samples=4000,
+#                                            delta_p=delta, representation="delta")
+#         dim = X.shape[1]
+#         a_mlp  = quick_train(MLP(input_dim=dim),                          X, y)
+#         a_cnn  = quick_train(CNN(input_dim=dim, num_filters=32),           X, y, lr=1e-3)
+#         a_siam = quick_train(SiameseNet(branch_dim=dim//2, embed_dim=64),  X, y)
+#         # MINE needs more epochs and lower LR to converge — use dedicated config
+#         a_mine = quick_train(MINE(input_dim=dim, hidden_dim=512),          X_mine, y_mine,
+#                              epochs=15, lr=3e-4, use_scheduler=True)
+#         mlp_accs.append(a_mlp); cnn_accs.append(a_cnn)
+#         siam_accs.append(a_siam); mine_accs.append(a_mine)
+#         log(f"  r={r:<6} {a_mlp:>8.4f} {a_cnn:>8.4f} {a_siam:>10.4f} {a_mine:>8.4f}")
 
-    log()
-    for mname, accs in [("MLP",mlp_accs),("CNN",cnn_accs),("Siamese",siam_accs),("MINE",mine_accs)]:
-        max_r = max((r for r,a in zip(test_rounds,accs) if a > 0.55), default=test_rounds[0])
-        log(f"  Max distinguishable round ({mname}): r={max_r}  acc={accs[test_rounds.index(max_r)]:.4f}")
-    log()
+#     log()
+#     for mname, accs in [("MLP",mlp_accs),("CNN",cnn_accs),("Siamese",siam_accs),("MINE",mine_accs)]:
+#         max_r = max((r for r,a in zip(test_rounds,accs) if a > 0.55), default=test_rounds[0])
+#         log(f"  Max distinguishable round ({mname}): r={max_r}  acc={accs[test_rounds.index(max_r)]:.4f}")
+#     log()
 
-    save_line(test_rounds,
-              {"MLP": mlp_accs, "CNN": cnn_accs, "Siamese": siam_accs, "MINE": mine_accs},
-              f"Accuracy vs Rounds — {CIPHER_NAME.upper()} (all models)",
-              "acc_vs_rounds.png")
+#     save_line(test_rounds,
+#               {"MLP": mlp_accs, "CNN": cnn_accs, "Siamese": siam_accs, "MINE": mine_accs},
+#               f"Accuracy vs Rounds — {CIPHER_NAME.upper()} (all models)",
+#               "acc_vs_rounds.png")
 
-    # ── Part B: multi-cipher comparison (MLP, delta rep) ────────────────────
-    log(f"  Part B — Multi-cipher | MLP | delta rep")
-    log(f"  {'Cipher':<12} {'Rounds tested':<24} {'Max dist. round':>16}")
-    log(f"  {'-'*55}")
+#     # ── Part B: multi-cipher comparison (MLP, delta rep) ────────────────────
+#     log(f"  Part B — Multi-cipher | MLP | delta rep")
+#     log(f"  {'Cipher':<12} {'Rounds tested':<24} {'Max dist. round':>16}")
+#     log(f"  {'-'*55}")
 
-    multi_cipher_configs = {
-        "simon32":   (list(range(2, 10)), DELTA_P["simon32"]),
-        "gift64":    (list(range(2, 9)),  DELTA_P["gift64"]),
-        "present":   (list(range(2, 9)),  DELTA_P["present"]),
-        "craft":     (list(range(2, 8)),  DELTA_P["craft"]),
-        "pyjamask":  (list(range(1, 8)),  DELTA_P["pyjamask"]),
-        "skinny64":  (list(range(2, 9)),  DELTA_P["skinny64"]),
-        "gift128":   (list(range(2, 8)),  DELTA_P["gift128"]),
-        "skinny128": (list(range(2, 8)),  DELTA_P["skinny128"]),
-    }
-    multi_results = {}
+#     multi_cipher_configs = {
+#         "simon32":   (list(range(2, 10)), DELTA_P["simon32"]),
+#         "gift64":    (list(range(2, 9)),  DELTA_P["gift64"]),
+#         "present":   (list(range(2, 9)),  DELTA_P["present"]),
+#         "craft":     (list(range(2, 8)),  DELTA_P["craft"]),
+#         "pyjamask":  (list(range(1, 8)),  DELTA_P["pyjamask"]),
+#         "skinny64":  (list(range(2, 9)),  DELTA_P["skinny64"]),
+#         "gift128":   (list(range(2, 8)),  DELTA_P["gift128"]),
+#         "skinny128": (list(range(2, 8)),  DELTA_P["skinny128"]),
+#     }
+#     multi_results = {}
 
-    for cname, (rounds, dp) in multi_cipher_configs.items():
-        c = get_cipher(cname)
-        accs = []
+#     for cname, (rounds, dp) in multi_cipher_configs.items():
+#         c = get_cipher(cname)
+#         accs = []
+#         for r in rounds:
+#             X, y = generate_dataset(c, rounds=r, n_samples=N_SAMPLES,
+#                                      delta_p=dp, representation="delta")
+#             dim = X.shape[1]
+#             acc = quick_train(MLP(input_dim=dim), X, y)
+#             accs.append(acc)
+#         multi_results[cname] = (rounds, accs)
+#         max_r = max((r for r, a in zip(rounds, accs) if a > 0.55), default=rounds[0])
+#         log(f"  {cname:<12} {str(rounds):<24} r={max_r} ({accs[rounds.index(max_r)]:.4f})")
+
+#     log()
+
+#     # Split into two plots for readability (4 ciphers each)
+#     ciphers_a = {k: multi_results[k] for k in ["simon32", "gift64", "present", "craft"]}
+#     ciphers_b = {k: multi_results[k] for k in ["pyjamask", "skinny64", "gift128", "skinny128"]}
+#     save_multi_line(ciphers_a,
+#                     "Accuracy vs Rounds — Ciphers Group A (MLP, delta)",
+#                     "acc_vs_rounds_ciphers_a.png")
+#     save_multi_line(ciphers_b,
+#                     "Accuracy vs Rounds — Ciphers Group B (MLP, delta)",
+#                     "acc_vs_rounds_ciphers_b.png")
+#     # Also save combined (all 8)
+#     save_multi_line(multi_results,
+#                     "Accuracy vs Rounds — All 8 Ciphers (MLP, delta)",
+#                     "acc_vs_rounds_all_ciphers.png")
+
+#     # ── Individual per-cipher plots ──────────────────────────────────────────
+#     log(f"  Individual cipher plots:")
+#     for cname, (rounds, accs) in multi_results.items():
+#         save_single_cipher_line(cname, rounds, accs,
+#                                 f"acc_vs_rounds_{cname}.png")
+
+#     return test_rounds, mlp_accs, cnn_accs, siam_accs, mine_accs
+
+
+
+
+
+def exp4_rounds_per_cipher_all_models():
+    log("=" * 60)
+    log("  EXP 4: Accuracy vs Rounds (Per Cipher, All Models)")
+    log("=" * 60)
+
+    results = {}
+
+    for cname in ALL_CIPHERS:
+        log(f"\n  Cipher: {cname.upper()}")
+        cipher = get_cipher(cname)
+        delta  = DELTA_P[cname]
+        rounds = list(range(2, min(FULL_ROUNDS[cname] + 1, 10)))
+
+        accs = {"MLP": [], "CNN": [], "Siamese": [], "MINE": []}
+
         for r in rounds:
-            X, y = generate_dataset(c, rounds=r, n_samples=N_SAMPLES,
-                                     delta_p=dp, representation="delta")
+            X, y = generate_dataset(cipher, rounds=r, n_samples=N_SAMPLES,
+                                    delta_p=delta, representation="delta")
             dim = X.shape[1]
-            acc = quick_train(MLP(input_dim=dim), X, y)
-            accs.append(acc)
-        multi_results[cname] = (rounds, accs)
-        max_r = max((r for r, a in zip(rounds, accs) if a > 0.55), default=rounds[0])
-        log(f"  {cname:<12} {str(rounds):<24} r={max_r} ({accs[rounds.index(max_r)]:.4f})")
 
-    log()
+            accs["MLP"].append(quick_train(MLP(input_dim=dim), X, y))
+            accs["CNN"].append(quick_train(CNN(input_dim=dim, num_filters=32), X, y))
+            accs["Siamese"].append(quick_train(SiameseNet(branch_dim=dim//2, embed_dim=64), X, y))
 
-    # Split into two plots for readability (4 ciphers each)
-    ciphers_a = {k: multi_results[k] for k in ["simon32", "gift64", "present", "craft"]}
-    ciphers_b = {k: multi_results[k] for k in ["pyjamask", "skinny64", "gift128", "skinny128"]}
-    save_multi_line(ciphers_a,
-                    "Accuracy vs Rounds — Ciphers Group A (MLP, delta)",
-                    "acc_vs_rounds_ciphers_a.png")
-    save_multi_line(ciphers_b,
-                    "Accuracy vs Rounds — Ciphers Group B (MLP, delta)",
-                    "acc_vs_rounds_ciphers_b.png")
-    # Also save combined (all 8)
-    save_multi_line(multi_results,
-                    "Accuracy vs Rounds — All 8 Ciphers (MLP, delta)",
-                    "acc_vs_rounds_all_ciphers.png")
+            X_m, y_m = generate_dataset(cipher, rounds=r, n_samples=4000,
+                                        delta_p=delta, representation="delta")
+            accs["MINE"].append(quick_train(MINE(input_dim=dim, hidden_dim=512),
+                                            X_m, y_m, epochs=15, lr=3e-4, use_scheduler=True))
 
-    # ── Individual per-cipher plots ──────────────────────────────────────────
-    log(f"  Individual cipher plots:")
-    for cname, (rounds, accs) in multi_results.items():
-        save_single_cipher_line(cname, rounds, accs,
-                                f"acc_vs_rounds_{cname}.png")
+        save_line(rounds, accs,
+          f"Accuracy vs Rounds — {cname.upper()} (All Models, delta)",
+          f"acc_vs_rounds_models_{cname}.png",
+          subdir="rounds")
 
-    return test_rounds, mlp_accs, cnn_accs, siam_accs, mine_accs
+        results[cname] = (rounds, accs)
+
+    return results
+
+
+
+
+
+def exp5_accuracy_vs_model_fixed():
+    log("=" * 60)
+    log("  EXP 5: Accuracy vs Model (Fixed Setting)")
+    log("=" * 60)
+
+    cipher = get_cipher("simon32")
+    delta  = DELTA_P["simon32"]
+
+    X, y = generate_dataset(cipher, rounds=4, n_samples=4000,
+                            delta_p=delta, representation="delta")
+    dim = X.shape[1]
+
+    models = {
+        "MLP": MLP(input_dim=dim),
+        "CNN": CNN(input_dim=dim, num_filters=32),
+        "Siamese": SiameseNet(branch_dim=dim//2, embed_dim=64),
+        "MINE": MINE(input_dim=dim, hidden_dim=512)
+    }
+
+    names, accs = [], []
+
+    for name, model in models.items():
+        acc = quick_train(model, X, y, epochs=15, lr=3e-4)
+        names.append(name)
+        accs.append(acc)
+        log(f"  {name}: {acc:.4f}")
+
+    save_bar(names, accs,
+         "Accuracy vs Model (simon32, r=4, delta)",
+         "Model", "Accuracy (%)",
+         "acc_vs_model_fixed.png",
+         subdir="model")
+
+    return names, accs
+
+
+
+
+
+
+
+def exp6_model_representation_heatmap():
+    log("=" * 60)
+    log("  EXP 6: Model × Representation Heatmap")
+    log("=" * 60)
+
+    cipher = get_cipher("simon32")
+    delta  = DELTA_P["simon32"]
+
+    reps = ["delta", "concat", "bitslice", "statistical"]
+    models = ["MLP", "CNN", "Siamese"]
+
+    heatmap = []
+
+    for m in models:
+        row = []
+        for rep in reps:
+            X, y = generate_dataset(cipher, rounds=4, n_samples=4000,
+                                    delta_p=delta, representation=rep)
+
+            if X.ndim > 2:
+                X = X.reshape(len(X), -1)
+
+            dim = X.shape[1]
+
+            # 🚨 FIX: Skip invalid CNN case (odd input dimension)
+            if (m == "CNN" and dim % 2 != 0) or (m == "Siamese" and dim % 2 != 0):
+                log(f"{m} + {rep}: skipped (invalid dim {dim})")
+                row.append(np.nan)
+                continue
+                
+
+            # Model selection
+            if m == "MLP":
+                model = MLP(input_dim=dim)
+            elif m == "CNN":
+                model = CNN(input_dim=dim, num_filters=32)
+            else:
+                model = SiameseNet(branch_dim=dim // 2, embed_dim=64)
+
+            acc = quick_train(model, X, y)
+            row.append(acc)
+            log(f"{m} + {rep}: {acc:.4f}")
+
+        heatmap.append(row)
+
+    # Convert to numpy array
+    heatmap_arr = np.array(heatmap) * 100
+
+    # Plot heatmap
+    import seaborn as sns
+    plt.figure(figsize=(6, 4))
+
+    sns.heatmap(
+        heatmap_arr,
+        annot=True,
+        fmt=".1f",
+        xticklabels=reps,
+        yticklabels=models,
+        cmap="viridis",
+        mask=np.isnan(heatmap_arr)   # ✅ hide invalid cells
+    )
+
+    plt.title("Model × Representation Accuracy (%)")
+    plt.tight_layout()
+
+    path = os.path.join(PLOT_DIR, "heatmap", "model_rep_heatmap.png")
+    os.makedirs(os.path.dirname(path), exist_ok=True)
+
+    plt.savefig(path)
+    plt.close()
+
+    log(f"  Plot saved: {path}")
+
+
+
+
 
 # ══════════════════════════════════════════════════════════════════════════════
 # EXPERIMENT 2 — Accuracy vs Representation  (now includes word)
@@ -325,10 +528,11 @@ def exp2_accuracy_vs_representation():
     log()
 
     save_bar(reps, rep_accs,
-             "Accuracy vs Representation",
-             "Representation", "Test Accuracy (%)",
-             "acc_vs_representation.png",
-             color=["#2196F3","#4CAF50","#FF5722","#795548","#FF9800","#9C27B0","#F44336"])
+         "Accuracy vs Representation",
+         "Representation", "Test Accuracy (%)",
+         "acc_vs_representation.png",
+         subdir="representation",
+        color=["#2196F3","#4CAF50","#FF5722","#795548","#FF9800","#9C27B0","#F44336"])
 
     return reps, rep_accs
 
@@ -390,9 +594,10 @@ def exp2_all_ciphers():
 
     log()
     save_bar(cipher_names, cipher_accs,
-             "Accuracy per Cipher — MLP, delta rep (best round per cipher)",
-             "Cipher", "Test Accuracy (%)",
-             "acc_vs_cipher.png",
+         "Accuracy per Cipher — MLP, delta rep (best round per cipher)",
+         "Cipher", "Test Accuracy (%)",
+         "acc_vs_cipher.png",
+         subdir="cipher",
              color=["#2196F3","#4CAF50","#FF5722","#FF9800",
                     "#9C27B0","#F44336","#795548","#00BCD4"])
     return cipher_names, cipher_accs
@@ -400,135 +605,208 @@ def exp2_all_ciphers():
 # ══════════════════════════════════════════════════════════════════════════════
 # EXPERIMENT 3 — Accuracy vs Model  (now includes MINE)
 # ══════════════════════════════════════════════════════════════════════════════
-def exp3_accuracy_vs_model():
-    sep = "=" * 60
-    log(sep)
-    log("  EXPERIMENT 3: Accuracy vs Model Architecture")
-    log(f"  Cipher: {CIPHER_NAME}  |  Rounds: 4  |  N=4000  |  Epochs: 15")
-    log(f"  MLP+MINE: delta rep  |  CNN+Siamese: concat rep")
-    log(sep)
-    log()
+# def exp3_accuracy_vs_model():
+#     sep = "=" * 60
+#     log(sep)
+#     log("  EXPERIMENT 3: Accuracy vs Model Architecture")
+#     log(f"  Cipher: {CIPHER_NAME}  |  Rounds: 4  |  N=4000  |  Epochs: 15")
+#     log(f"  MLP+MINE: delta rep  |  CNN+Siamese: concat rep")
+#     log(sep)
+#     log()
 
-    cipher = get_cipher(CIPHER_NAME)
-    delta  = DELTA_P[CIPHER_NAME]
-    N_EXP3 = 4000
-    EP_EXP3 = 15
+#     cipher = get_cipher(CIPHER_NAME)
+#     delta  = DELTA_P[CIPHER_NAME]
+#     N_EXP3 = 4000
+#     EP_EXP3 = 15
 
-    X_delta,  y_delta  = generate_dataset(cipher, rounds=4, n_samples=N_EXP3,
-                                           delta_p=delta, representation="delta")
-    X_concat, y_concat = generate_dataset(cipher, rounds=4, n_samples=N_EXP3,
-                                           delta_p=delta, representation="concat")
-    dim_d = X_delta.shape[1]
-    dim_c = X_concat.shape[1]
+#     X_delta,  y_delta  = generate_dataset(cipher, rounds=4, n_samples=N_EXP3,
+#                                            delta_p=delta, representation="delta")
+#     X_concat, y_concat = generate_dataset(cipher, rounds=4, n_samples=N_EXP3,
+#                                            delta_p=delta, representation="concat")
+#     dim_d = X_delta.shape[1]
+#     dim_c = X_concat.shape[1]
 
-    def _train(model, X, y, epochs, lr):
-        X_t = torch.tensor(X.astype(np.float32))
-        y_t = torch.tensor(y, dtype=torch.float32).unsqueeze(1)
-        split = int(0.8 * len(X_t))
-        tr_ld = DataLoader(TensorDataset(X_t[:split], y_t[:split]), batch_size=BATCH, shuffle=True)
-        te_ld = DataLoader(TensorDataset(X_t[split:], y_t[split:]), batch_size=BATCH)
-        opt   = torch.optim.AdamW(model.parameters(), lr=lr, weight_decay=1e-4)
-        crit  = nn.BCELoss()
-        sched = torch.optim.lr_scheduler.CosineAnnealingLR(opt, T_max=epochs)
-        for _ in range(epochs):
-            model.train()
-            for xb, yb in tr_ld:
-                p = model(xb); l = crit(p, yb)
-                opt.zero_grad(); l.backward(); opt.step()
-            sched.step()
-        model.eval(); correct = tot = 0
-        with torch.no_grad():
-            for xb, yb in te_ld:
-                p = model(xb)
-                correct += ((p > 0.5).float() == yb).sum().item()
-                tot     += yb.size(0)
-        return correct / tot
+#     def _train(model, X, y, epochs, lr):
+#         perm = np.random.permutation(len(X))
+#         X = X[perm]
+#         y = y[perm]
+#         X_t = torch.tensor(X.astype(np.float32))
+#         y_t = torch.tensor(y, dtype=torch.float32).unsqueeze(1)
+#         split = int(0.8 * len(X_t))
+#         tr_ld = DataLoader(TensorDataset(X_t[:split], y_t[:split]), batch_size=BATCH, shuffle=True)
+#         te_ld = DataLoader(TensorDataset(X_t[split:], y_t[split:]), batch_size=BATCH)
+#         opt   = torch.optim.AdamW(model.parameters(), lr=lr, weight_decay=1e-4)
+#         crit  = nn.BCELoss()
+#         sched = torch.optim.lr_scheduler.CosineAnnealingLR(opt, T_max=epochs)
+#         for _ in range(epochs):
+#             model.train()
+#             for xb, yb in tr_ld:
+#                 p = model(xb); l = crit(p, yb)
+#                 opt.zero_grad(); l.backward(); opt.step()
+#             sched.step()
+#         model.eval(); correct = tot = 0
+#         with torch.no_grad():
+#             for xb, yb in te_ld:
+#                 p = model(xb)
+#                 correct += ((p > 0.5).float() == yb).sum().item()
+#                 tot     += yb.size(0)
+#         return correct / tot
 
-    configs = {
-        "MLP"    : (MLP(input_dim=dim_d),                           X_delta,  y_delta,  EP_EXP3, 3e-4),
-        "CNN"    : (CNN(input_dim=dim_c, num_filters=32),            X_concat, y_concat, EP_EXP3, 1e-3),
-        "Siamese": (SiameseNet(branch_dim=dim_c//2, embed_dim=64),   X_concat, y_concat, EP_EXP3, 1e-3),
-        "MINE"   : (MINE(input_dim=dim_c, hidden_dim=512),           X_concat, y_concat, EP_EXP3, 3e-4),
-    }
-    rep_labels = {"MLP": "delta", "CNN": "concat", "Siamese": "concat", "MINE": "concat"}
+#     configs = {
+#         "MLP"    : (MLP(input_dim=dim_d),                           X_delta,  y_delta,  EP_EXP3, 3e-4),
+#         "CNN"    : (CNN(input_dim=dim_c, num_filters=32),            X_concat, y_concat, EP_EXP3, 1e-3),
+#         "Siamese": (SiameseNet(branch_dim=dim_c//2, embed_dim=64),   X_concat, y_concat, EP_EXP3, 1e-3),
+#         "MINE"   : (MINE(input_dim=dim_c, hidden_dim=512),           X_concat, y_concat, EP_EXP3, 3e-4),
+#     }
+#     rep_labels = {"MLP": "delta", "CNN": "concat", "Siamese": "concat", "MINE": "concat"}
 
-    log(f"  {'Model':<12} {'Params':>10} {'Rep':>8} {'Accuracy':>10}")
-    log(f"  {'-'*44}")
+#     log(f"  {'Model':<12} {'Params':>10} {'Rep':>8} {'Accuracy':>10}")
+#     log(f"  {'-'*44}")
 
-    model_names = []; model_accs = []
-    for name, (model, X, y, ep, lr) in configs.items():
-        params = sum(p.numel() for p in model.parameters() if p.requires_grad)
-        acc    = _train(model, X, y, ep, lr)
-        model_names.append(name); model_accs.append(acc)
-        log(f"  {name:<12} {params:>10,} {rep_labels[name]:>8} {acc:>10.4f}")
+#     model_names = []; model_accs = []
+#     for name, (model, X, y, ep, lr) in configs.items():
+#         params = sum(p.numel() for p in model.parameters() if p.requires_grad)
+#         acc    = _train(model, X, y, ep, lr)
+#         model_names.append(name); model_accs.append(acc)
+#         log(f"  {name:<12} {params:>10,} {rep_labels[name]:>8} {acc:>10.4f}")
 
-    log()
+#     log()
 
-    save_bar(model_names, model_accs,
-             "Accuracy vs Model Architecture",
-             "Model", "Test Accuracy (%)",
-             "acc_vs_model.png",
-             color=["#2196F3", "#FF9800", "#4CAF50", "#E91E63"])
+#     save_bar(model_names, model_accs,
+#              "Accuracy vs Model Architecture",
+#              "Model", "Test Accuracy (%)",
+#              "acc_vs_model.png",
+#              color=["#2196F3", "#FF9800", "#4CAF50", "#E91E63"])
 
-    return model_names, model_accs
+#     return model_names, model_accs
 
 # ══════════════════════════════════════════════════════════════════════════════
 # MAIN
 # ══════════════════════════════════════════════════════════════════════════════
+# ══════════════════════════════════════════════════════════════════════════════
+# MAIN (FINAL — SIMPLE & CLEAN)
+# ══════════════════════════════════════════════════════════════════════════════
 def main():
     log("=" * 60)
-    log("  NEURAL CRYPTANALYSIS — FULL EXPERIMENTS")
-    log(f"  Cipher: {CIPHER_NAME}  |  Samples/run: {N_SAMPLES}  |  Epochs: {EPOCHS}")
+    log("  NEURAL CRYPTANALYSIS — FINAL RUN")
     log("=" * 60)
     log()
 
-    rounds, mlp_r, cnn_r, siam_r, mine_r = exp1_accuracy_vs_rounds()
-    reps,   rep_accs                      = exp2_accuracy_vs_representation()
-    models, model_accs                    = exp3_accuracy_vs_model()
-    ciphers, cipher_accs                  = exp2_all_ciphers()
+    # ─────────────────────────────────────────────
+    # 1. Accuracy vs Rounds (per cipher, all models)
+    # ─────────────────────────────────────────────
+    log("Running: Accuracy vs Rounds (per cipher)")
+    exp4_rounds_per_cipher_all_models()   # uses subdir="rounds"
 
-    sep = "=" * 60
-    log(sep)
+    # ─────────────────────────────────────────────
+    # 2. Accuracy vs Representation
+    # ─────────────────────────────────────────────
+    log("\nRunning: Accuracy vs Representation")
+    reps, rep_accs = exp2_accuracy_vs_representation()   # subdir="representation"
+
+    # ─────────────────────────────────────────────
+    # 3. Accuracy vs Model
+    # ─────────────────────────────────────────────
+    log("\nRunning: Accuracy vs Model")
+    model_names, model_accs = exp5_accuracy_vs_model_fixed()   # subdir="model"
+
+    # ─────────────────────────────────────────────
+    # 4. Accuracy vs Cipher
+    # ─────────────────────────────────────────────
+    log("\nRunning: Accuracy vs Cipher")
+    cipher_names, cipher_accs = exp2_all_ciphers()   # subdir="cipher"
+
+    # ─────────────────────────────────────────────
+    # (Optional) Heatmap
+    # ─────────────────────────────────────────────
+    log("\nRunning: Model × Representation Heatmap")
+    exp6_model_representation_heatmap()   # subdir="heatmap"
+
+    # ─────────────────────────────────────────────
+    # FINAL SUMMARY (short & clean)
+    # ─────────────────────────────────────────────
+    log("\n" + "=" * 60)
     log("  FINAL SUMMARY")
-    log(sep)
-    log()
-    log("  Exp 1 — Accuracy vs Rounds (simon32, concat):")
-    log(f"  {'Rounds':<8} {'MLP':>8} {'CNN':>8} {'Siamese':>10} {'MINE':>8}")
-    for r, a1, a2, a3, a4 in zip(rounds, mlp_r, cnn_r, siam_r, mine_r):
-        log(f"  {r:<8} {a1:>8.4f} {a2:>8.4f} {a3:>10.4f} {a4:>8.4f}")
-    log()
-    log("  Exp 2 — Accuracy vs Representation (MLP, r=4):")
-    for rep, acc in zip(reps, rep_accs):
-        log(f"  {rep:<16} {acc:.4f}")
-    log()
-    log("  Exp 3 — Accuracy vs Model (r=4):")
-    for name, acc in zip(models, model_accs):
-        log(f"  {name:<12} {acc:.4f}")
-    log()
-    log("  Exp 2b — Accuracy per Cipher (MLP, delta, r=4):")
-    for cname, acc in zip(ciphers, cipher_accs):
-        log(f"  {cname:<12} {acc:.4f}")
-    log()
-    log("  Plots saved in: plots/")
-    log("    - acc_vs_rounds.png              (simon32, all 4 models)")
-    log("    - acc_vs_rounds_ciphers_a.png    (simon32/gift64/present/craft)")
-    log("    - acc_vs_rounds_ciphers_b.png    (pyjamask/skinny64/gift128/skinny128)")
-    log("    - acc_vs_rounds_all_ciphers.png  (all 8 ciphers)")
-    log("    - acc_vs_rounds_simon32.png      (simon32, individual)")
-    log("    - acc_vs_rounds_gift64.png       (gift64, individual)")
-    log("    - acc_vs_rounds_present.png      (present, individual)")
-    log("    - acc_vs_rounds_craft.png        (craft, individual)")
-    log("    - acc_vs_rounds_pyjamask.png     (pyjamask, individual)")
-    log("    - acc_vs_rounds_skinny64.png     (skinny64, individual)")
-    log("    - acc_vs_rounds_gift128.png      (gift128, individual)")
-    log("    - acc_vs_rounds_skinny128.png    (skinny128, individual)")
-    log("    - acc_vs_representation.png      (simon32, 7 representations)")
-    log("    - acc_vs_model.png               (simon32, 4 models)")
-    log("    - acc_vs_cipher.png              (all 8 ciphers, MLP delta)")
-    log(sep)
+    log("=" * 60)
+
+    log("\nRepresentation:")
+    for r, a in zip(reps, rep_accs):
+        log(f"  {r:<12} {a:.4f}")
+
+    log("\nModels:")
+    for m, a in zip(model_names, model_accs):
+        log(f"  {m:<12} {a:.4f}")
+
+    log("\nCiphers:")
+    for c, a in zip(cipher_names, cipher_accs):
+        log(f"  {c:<12} {a:.4f}")
+
+    log("\nPlots saved in:")
+    log("  plots/rounds/")
+    log("  plots/representation/")
+    log("  plots/model/")
+    log("  plots/cipher/")
+    log("  plots/heatmap/")
+
+    log("=" * 60)
 
     save_log()
 
 
+# ══════════════════════════════════════════════════════════════════════════════
+# CLI MAIN
+# ══════════════════════════════════════════════════════════════════════════════
+
+def run_all():
+    exp4_rounds_per_cipher_all_models()
+    exp2_accuracy_vs_representation()
+    exp5_accuracy_vs_model_fixed()
+    exp2_all_ciphers()
+    exp6_model_representation_heatmap()
+
+
+def cli_main():
+    print("=" * 60)
+    print(" NEURAL CRYPTANALYSIS — RUN EXPERIMENTS")
+    print("=" * 60)
+
+    print("\nSelect an option:\n")
+    print("1. Accuracy vs Rounds (per cipher, all models)")
+    print("2. Accuracy vs Representation")
+    print("3. Accuracy vs Model")
+    print("4. Accuracy vs Cipher")
+    print("5. Model × Representation Heatmap")
+    print("6. Run ALL experiments")
+    print("0. Exit")
+
+    choice = input("\nEnter choice: ").strip()
+
+    print()
+
+    if choice == "1":
+        exp4_rounds_per_cipher_all_models()
+
+    elif choice == "2":
+        exp2_accuracy_vs_representation()
+
+    elif choice == "3":
+        exp5_accuracy_vs_model_fixed()
+
+    elif choice == "4":
+        exp2_all_ciphers()
+
+    elif choice == "5":
+        exp6_model_representation_heatmap()
+
+    elif choice == "6":
+        run_all()
+
+    elif choice == "0":
+        print("Exiting...")
+
+    else:
+        print("Invalid choice. Please run again.")
+
+
 if __name__ == "__main__":
-    main()
+    cli_main()
