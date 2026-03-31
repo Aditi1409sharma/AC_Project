@@ -12,30 +12,36 @@
   Part A — SIMON32 | All models | concat rep
   Rounds        MLP      CNN    Siamese     MINE
   ----------------------------------------------
-  r=2        0.8975   0.9925     1.0000   0.4750
-  r=3        0.7250   0.9825     1.0000   0.4975
-  r=4        0.8475   0.9025     0.9700   0.4850
-  r=5        0.5050   0.6100     0.7625   0.4875
-  r=6        0.5275   0.5200     0.5200   0.5375
-  r=7        0.4850   0.5075     0.4700   0.4775
-  r=8        0.5050   0.5050     0.5125   0.5075
-  r=9        0.4875   0.4775     0.4750   0.4975
+  r=2        0.9400   1.0000     1.0000   1.0000
+  r=3        0.5725   0.9675     0.9950   0.9988
+  r=4        0.6900   0.8950     0.9700   0.9975
+  r=5        0.5600   0.6050     0.7875   0.9375
+  r=6        0.5425   0.5750     0.5425   0.6362
+  r=7        0.5200   0.5375     0.5275   0.5400
+  r=8        0.5150   0.4750     0.5300   0.5225
+  r=9        0.5000   0.4750     0.5175   0.4950
 
-  Max distinguishable round (MLP): r=4  acc=0.8475
-  Max distinguishable round (CNN): r=5  acc=0.6100
-  Max distinguishable round (Siamese): r=5  acc=0.7625
-  Max distinguishable round (MINE): r=2  acc=0.4750
+  Max distinguishable round (MLP): r=5  acc=0.5600
+  Max distinguishable round (CNN): r=6  acc=0.5750
+  Max distinguishable round (Siamese): r=5  acc=0.7875
+  Max distinguishable round (MINE): r=6  acc=0.6362
 
   Plot saved: C:\Users\ridex.DESKTOP-GN22UPQ.000\Downloads\AC_Project\plots\acc_vs_rounds.png
-  Part B — Multi-cipher | Siamese | delta rep
-  Cipher       Rounds tested         Max dist. round
-  ----------------------------------------------------
-  simon32      [2, 3, 4, 5, 6, 7, 8, 9] r=7 (0.5550)
-  gift64       [2, 3, 4, 5, 6, 7, 8] r=4 (0.8050)
-  present      [2, 3, 4, 5, 6, 7, 8] r=5 (0.5925)
-  craft        [2, 3, 4, 5, 6, 7]   r=3 (0.9850)
+  Part B — Multi-cipher | MLP | delta rep
+  Cipher       Rounds tested             Max dist. round
+  -------------------------------------------------------
+  simon32      [2, 3, 4, 5, 6, 7, 8, 9] r=8 (0.5525)
+  gift64       [2, 3, 4, 5, 6, 7, 8]    r=5 (0.5725)
+  present      [2, 3, 4, 5, 6, 7, 8]    r=5 (0.6225)
+  craft        [2, 3, 4, 5, 6, 7]       r=3 (0.9650)
+  pyjamask     [1, 2, 3, 4, 5, 6, 7]    r=2 (0.6400)
+  skinny64     [2, 3, 4, 5, 6, 7, 8]    r=6 (0.5675)
+  gift128      [2, 3, 4, 5, 6, 7]       r=6 (0.5950)
+  skinny128    [2, 3, 4, 5, 6, 7]       r=5 (1.0000)
 
-  Plot saved: C:\Users\ridex.DESKTOP-GN22UPQ.000\Downloads\AC_Project\plots\acc_vs_rounds_multiciper.png
+  Plot saved: C:\Users\ridex.DESKTOP-GN22UPQ.000\Downloads\AC_Project\plots\acc_vs_rounds_ciphers_a.png
+  Plot saved: C:\Users\ridex.DESKTOP-GN22UPQ.000\Downloads\AC_Project\plots\acc_vs_rounds_ciphers_b.png
+  Plot saved: C:\Users\ridex.DESKTOP-GN22UPQ.000\Downloads\AC_Project\plots\acc_vs_rounds_all_ciphers.png
 ============================================================
   EXPERIMENT 2: Accuracy vs Representation
   Cipher: simon32  |  Rounds: 4  |  Model: MLP
@@ -43,13 +49,13 @@
 
   Representation    Input Dim   Accuracy
   ----------------------------------------
-  delta                    32     0.9975
-  concat                   64     0.5700
-  raw                      64     0.8425
-  word                      6     0.8925
-  bitslice                 64     0.9000
-  statistical              59     0.9975
-  joint                   192     0.9950
+  delta                    32     0.9958
+  concat                   64     0.9792
+  raw                      64     0.9925
+  word                      6     0.9658
+  bitslice                 64     0.9850
+  statistical              59     0.9983
+  joint                   192     0.9967
 
   Plot saved: C:\Users\ridex.DESKTOP-GN22UPQ.000\Downloads\AC_Project\plots\acc_vs_representation.png
 ============================================================
@@ -61,44 +67,74 @@
   Model            Params      Rep   Accuracy
   --------------------------------------------
   MLP             753,537    delta     1.0000
-  CNN             313,141   concat     0.9413
-  Siamese          24,897   concat     0.9950
-  MINE            115,457   concat     0.5238
+  CNN             313,141   concat     0.9600
+  Siamese          24,897   concat     0.9975
+  MINE            540,929   concat     0.9938
 
   Plot saved: C:\Users\ridex.DESKTOP-GN22UPQ.000\Downloads\AC_Project\plots\acc_vs_model.png
+============================================================
+  EXPERIMENT 2b: Best Accuracy per Cipher — All Ciphers
+  Model: MLP  |  Representation: delta  |  Best round per cipher
+============================================================
+
+  Cipher        Round   Accuracy
+  --------------------------------
+  simon32      r=5    acc=0.9508
+  gift64       r=3    acc=0.9933
+  present      r=4    acc=0.9200
+  craft        r=3    acc=0.9775
+  pyjamask     r=1    acc=1.0000
+  skinny64     r=5    acc=1.0000
+  gift128      r=4    acc=0.9900
+  skinny128    r=4    acc=1.0000
+
+  Plot saved: C:\Users\ridex.DESKTOP-GN22UPQ.000\Downloads\AC_Project\plots\acc_vs_cipher.png
 ============================================================
   FINAL SUMMARY
 ============================================================
 
   Exp 1 — Accuracy vs Rounds (simon32, concat):
   Rounds        MLP      CNN    Siamese     MINE
-  2          0.8975   0.9925     1.0000   0.4750
-  3          0.7250   0.9825     1.0000   0.4975
-  4          0.8475   0.9025     0.9700   0.4850
-  5          0.5050   0.6100     0.7625   0.4875
-  6          0.5275   0.5200     0.5200   0.5375
-  7          0.4850   0.5075     0.4700   0.4775
-  8          0.5050   0.5050     0.5125   0.5075
-  9          0.4875   0.4775     0.4750   0.4975
+  2          0.9400   1.0000     1.0000   1.0000
+  3          0.5725   0.9675     0.9950   0.9988
+  4          0.6900   0.8950     0.9700   0.9975
+  5          0.5600   0.6050     0.7875   0.9375
+  6          0.5425   0.5750     0.5425   0.6362
+  7          0.5200   0.5375     0.5275   0.5400
+  8          0.5150   0.4750     0.5300   0.5225
+  9          0.5000   0.4750     0.5175   0.4950
 
   Exp 2 — Accuracy vs Representation (MLP, r=4):
-  delta            0.9975
-  concat           0.5700
-  raw              0.8425
-  word             0.8925
-  bitslice         0.9000
-  statistical      0.9975
-  joint            0.9950
+  delta            0.9958
+  concat           0.9792
+  raw              0.9925
+  word             0.9658
+  bitslice         0.9850
+  statistical      0.9983
+  joint            0.9967
 
   Exp 3 — Accuracy vs Model (r=4):
   MLP          1.0000
-  CNN          0.9413
-  Siamese      0.9950
-  MINE         0.5238
+  CNN          0.9600
+  Siamese      0.9975
+  MINE         0.9938
+
+  Exp 2b — Accuracy per Cipher (MLP, delta, r=4):
+  simon32      0.9508
+  gift64       0.9933
+  present      0.9200
+  craft        0.9775
+  pyjamask     1.0000
+  skinny64     1.0000
+  gift128      0.9900
+  skinny128    1.0000
 
   Plots saved in: plots/
-    - acc_vs_rounds.png
-    - acc_vs_rounds_multiciper.png
-    - acc_vs_representation.png
-    - acc_vs_model.png
+    - acc_vs_rounds.png              (simon32, all 4 models)
+    - acc_vs_rounds_ciphers_a.png    (simon32/gift64/present/craft)
+    - acc_vs_rounds_ciphers_b.png    (pyjamask/skinny64/gift128/skinny128)
+    - acc_vs_rounds_all_ciphers.png  (all 8 ciphers)
+    - acc_vs_representation.png      (simon32, 7 representations)
+    - acc_vs_model.png               (simon32, 4 models)
+    - acc_vs_cipher.png              (all 8 ciphers, MLP delta)
 ============================================================

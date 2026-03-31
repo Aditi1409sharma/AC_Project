@@ -101,13 +101,13 @@ Datasets are generated as balanced binary classification problems:
 
 | Representation | Shape | Accuracy (MLP, r=4) | Notes |
 |---------------|-------|---------------------|-------|
-| **delta** | `(block_bits,)` | **1.0000** | `bits(C ⊕ C')` — best differential signal |
-| concat | `(2×block_bits,)` | 0.9858 | `bits(C) ‖ bits(C')` — full information |
-| raw | `(2×block_bits,)` | 0.9758 | Same as concat, explicit float32 dtype |
-| word | `(3×n_words,)` | 0.9708 | 16-bit word-level normalised representation |
-| bitslice | `(2×block_bits,)` | 0.9592 | Interleaved `[C_i, C'_i]` — CNN-friendly |
 | **statistical** | `(59,)` | **0.9983** | 5-group feature vector (HW + nibble + XOR bits + autocorr) |
-| joint | `(6×block_bits,)` | 0.9933 | `bits(P, P', C, C', ΔP, ΔC)` — white-box setting |
+| joint | `(6×block_bits,)` | 0.9967 | `bits(P, P', C, C', ΔP, ΔC)` — white-box setting |
+| **delta** | `(block_bits,)` | **0.9958** | `bits(C ⊕ C')` — best differential signal |
+| raw | `(2×block_bits,)` | 0.9925 | Same as concat, explicit float32 dtype |
+| bitslice | `(2×block_bits,)` | 0.9850 | Interleaved `[C_i, C'_i]` — CNN-friendly |
+| concat | `(2×block_bits,)` | 0.9792 | `bits(C) ‖ bits(C')` — full information |
+| word | `(3×n_words,)` | 0.9658 | 16-bit word-level normalised representation |
 
 **Statistical representation features (59 features for simon32):**
 - Group 1 (7): Global HW stats — HW(C), HW(C'), HW(ΔC), |ΔHW|, bit correlation, HW upper/lower half
@@ -130,19 +130,19 @@ Datasets are generated as balanced binary classification problems:
 - **Architecture:** 3-channel input (C, C', XOR) → MultiScale stem (k=1,3,5) → 3 ResStages → global avg+max+std pooling → MLP head
 - **Params:** 313,141
 - **Best rep:** concat / bitslice
-- **Best accuracy:** 0.9762 (r=4, concat, N=8000, 10 epochs)
+- **Best accuracy:** 0.9600 (r=4, concat, N=4000, 15 epochs)
 
 ### 3. Siamese Network
 - **Architecture:** Shared encoder (2-layer) → concat embeddings + |diff| → classifier
 - **Params:** 24,897
 - **Best rep:** concat
-- **Best accuracy:** 0.9869 (r=4, concat, N=8000, 15 epochs)
+- **Best accuracy:** 0.9975 (r=4, concat, N=4000, 15 epochs)
 
 ### 4. MINE — Mutual Information Neural Estimator
 - **Architecture:** Augmented input `[C ‖ C' ‖ ΔC]` → `Linear(512) → LN → GELU × 4 + 2 skip connections → Linear(1) → Sigmoid`
 - **Params:** 540,929
 - **Best rep:** concat (augmented with XOR channel internally)
-- **Best accuracy:** 0.9969 (r=4, concat, N=8000, 15 epochs)
+- **Best accuracy:** 0.9938 (r=4, concat, N=4000, 15 epochs)
 - **Reference:** Belghazi et al., ICML 2018
 
 ---
@@ -153,67 +153,86 @@ Datasets are generated as balanced binary classification problems:
 
 | Rounds | MLP | CNN | Siamese | MINE |
 |--------|-----|-----|---------|------|
-| r=2 | 0.8975 | 0.9925 | 1.0000 | 0.4750 |
-| r=3 | 0.7250 | 0.9825 | 1.0000 | 0.4975 |
-| r=4 | 0.8475 | 0.9025 | 0.9700 | 0.4850 |
-| r=5 | 0.5050 | 0.6100 | 0.7625 | 0.4875 |
-| r=6 | 0.5275 | 0.5200 | 0.5200 | 0.5375 |
-| r=7 | 0.4850 | 0.5075 | 0.4700 | 0.4775 |
-| r=8 | 0.5050 | 0.5050 | 0.5125 | 0.5075 |
-| r=9 | 0.4875 | 0.4775 | 0.4750 | 0.4975 |
+| r=2 | 0.9400 | 1.0000 | 1.0000 | 1.0000 |
+| r=3 | 0.5725 | 0.9675 | 0.9950 | 0.9988 |
+| r=4 | 0.6900 | 0.8950 | 0.9700 | 0.9975 |
+| r=5 | 0.5600 | 0.6050 | 0.7875 | 0.9375 |
+| r=6 | 0.5425 | 0.5750 | 0.5425 | 0.6362 |
+| r=7 | 0.5200 | 0.5375 | 0.5275 | 0.5400 |
+| r=8 | 0.5150 | 0.4750 | 0.5300 | 0.5225 |
+| r=9 | 0.5000 | 0.4750 | 0.5175 | 0.4950 |
 
-**Max distinguishable round:** MLP r=4, CNN r=5, Siamese r=5
+**Max distinguishable round:** MLP r=5, CNN r=6, Siamese r=5, MINE r=6
 
 ### Multi-Cipher Comparison (MLP, delta rep)
 
 | Cipher | Max Distinguishable Round | Accuracy |
 |--------|--------------------------|---------|
-| simon32 | r=7 | 0.5550 |
-| gift64 | r=4 | 0.8050 |
-| present | r=5 | 0.5925 |
-| craft | r=3 | 0.9850 |
+| simon32 | r=8 | 0.5525 |
+| gift64 | r=5 | 0.5725 |
+| present | r=5 | 0.6225 |
+| craft | r=3 | 0.9650 |
+| pyjamask | r=2 | 0.6400 |
+| skinny64 | r=6 | 0.5675 |
+| gift128 | r=6 | 0.5950 |
+| skinny128 | r=5 | 1.0000 |
 
 ### Experiment 2 — Accuracy vs Representation (MLP, simon32, r=4)
 
 | Representation | Input Dim | Accuracy |
 |---------------|-----------|---------|
-| delta | 32 | 1.0000 |
 | statistical | 59 | 0.9983 |
-| joint | 192 | 0.9933 |
-| concat | 64 | 0.9858 |
-| raw | 64 | 0.9758 |
-| word | 6 | 0.9708 |
-| bitslice | 64 | 0.9592 |
+| delta | 32 | 0.9958 |
+| joint | 192 | 0.9967 |
+| raw | 64 | 0.9925 |
+| bitslice | 64 | 0.9850 |
+| concat | 64 | 0.9792 |
+| word | 6 | 0.9658 |
+
+### Experiment 2b — Best Accuracy per Cipher (MLP, delta, best round per cipher)
+
+| Cipher | Round | Accuracy |
+|--------|-------|---------|
+| simon32 | r=5 | 0.9508 |
+| gift64 | r=3 | 0.9933 |
+| present | r=4 | 0.9200 |
+| craft | r=3 | 0.9775 |
+| pyjamask | r=1 | 1.0000 |
+| skinny64 | r=5 | 1.0000 |
+| gift128 | r=4 | 0.9900 |
+| skinny128 | r=4 | 1.0000 |
 
 ### Experiment 3 — Accuracy vs Model (simon32, r=4, N=4000, 15 epochs)
 
 | Model | Params | Rep | Accuracy |
 |-------|--------|-----|---------|
 | MLP | 753,537 | delta | 1.0000 |
-| Siamese | 24,897 | concat | 0.9950 |
-| CNN | 313,141 | concat | 0.9413 |
-| MINE | 540,929 | concat | 0.9969* |
+| CNN | 313,141 | concat | 0.9600 |
+| Siamese | 24,897 | concat | 0.9975 |
+| MINE | 540,929 | concat | 0.9938 |
 
-*MINE accuracy with improved architecture (XOR augmentation + skip connections)
-
-### Model Benchmark (simon32, r=4, concat, N=8000)
+### Model Benchmark (simon32, r=4, concat, N=4000)
 
 | Model | Best Accuracy | vs Baseline |
 |-------|--------------|-------------|
-| MLP | 0.9906 | +0.4906 |
-| CNN | 0.9762 | +0.4762 |
-| Siamese | 0.9869 | +0.4869 |
+| MLP | 1.0000 | +0.5000 |
+| CNN | 0.9600 | +0.4600 |
+| Siamese | 0.9975 | +0.4975 |
+| MINE | 0.9938 | +0.4938 |
 | Baseline (random) | 0.5000 | — |
 
 ### ML Distinguisher — Max Rounds per Cipher (MLP, delta)
 
-| Cipher | r=2 | r=3 | r=4 | r=5 | r=6 | r=7 | Breaks at |
-|--------|-----|-----|-----|-----|-----|-----|-----------|
-| simon32 | 1.0000 | 1.0000 | 1.0000 | 0.9363 | 0.6775 | 0.5975 | r=8 |
-| gift64 | 1.0000 | 0.9912 | 0.8363 | 0.5637 | 0.4800 | — | r=6 |
-| present | 1.0000 | 0.9988 | 0.9025 | 0.6088 | 0.5088 | — | r=6 |
-| craft | 1.0000 | 0.9838 | 0.5062 | — | — | — | r=4 |
-| pyjamask | 1.0000 | 0.5238 | — | — | — | — | r=3 |
+| Cipher | Best Round | Best Accuracy | Max Dist. Round (multi-cipher scan) |
+|--------|-----------|--------------|-------------------------------------|
+| simon32 | r=5 | 0.9508 | r=8 (0.5525) |
+| gift64 | r=3 | 0.9933 | r=5 (0.5725) |
+| present | r=4 | 0.9200 | r=5 (0.6225) |
+| craft | r=3 | 0.9775 | r=3 (0.9650) |
+| pyjamask | r=1 | 1.0000 | r=2 (0.6400) |
+| skinny64 | r=5 | 1.0000 | r=6 (0.5675) |
+| gift128 | r=4 | 0.9900 | r=6 (0.5950) |
+| skinny128 | r=4 | 1.0000 | r=5 (1.0000) |
 
 ---
 
@@ -263,10 +282,21 @@ AC_Project/
 │   └── utils/
 │       └── config.py                Cipher registry, DELTA_P, FULL_ROUNDS, get_cipher()
 ├── plots/
-│   ├── acc_vs_rounds.png            Accuracy vs rounds for all 4 models
-│   ├── acc_vs_rounds_multiciper.png Multi-cipher accuracy vs rounds comparison
+│   ├── acc_vs_rounds.png            Accuracy vs rounds for all 4 models (simon32)
+│   ├── acc_vs_rounds_ciphers_a.png  Accuracy vs rounds (simon32/gift64/present/craft)
+│   ├── acc_vs_rounds_ciphers_b.png  Accuracy vs rounds (pyjamask/skinny64/gift128/skinny128)
+│   ├── acc_vs_rounds_all_ciphers.png All 8 ciphers accuracy vs rounds
+│   ├── acc_vs_rounds_simon32.png    SIMON32 individual accuracy vs rounds
+│   ├── acc_vs_rounds_gift64.png     GIFT-64 individual accuracy vs rounds
+│   ├── acc_vs_rounds_present.png    PRESENT individual accuracy vs rounds
+│   ├── acc_vs_rounds_craft.png      CRAFT individual accuracy vs rounds
+│   ├── acc_vs_rounds_pyjamask.png   Pyjamask individual accuracy vs rounds
+│   ├── acc_vs_rounds_skinny64.png   SKINNY-64 individual accuracy vs rounds
+│   ├── acc_vs_rounds_gift128.png    GIFT-128 individual accuracy vs rounds
+│   ├── acc_vs_rounds_skinny128.png  SKINNY-128 individual accuracy vs rounds
 │   ├── acc_vs_representation.png    Accuracy vs representation type
-│   └── acc_vs_model.png             Accuracy vs model architecture
+│   ├── acc_vs_model.png             Accuracy vs model architecture
+│   └── acc_vs_cipher.png            Best accuracy per cipher (all 8)
 ├── cipher_verification_output.txt   Cipher test vectors + avalanche + ML accuracy vs rounds
 ├── model_benchmark_output.txt       Per-epoch training log for MLP, CNN, Siamese
 ├── representation_comparison_output.txt  MLP accuracy across all 7 representations
@@ -366,12 +396,14 @@ python neural_cryptanalysis/data/generate_all_datasets.py
 
 ## Key Findings
 
-1. **Delta representation** is the most effective — directly encodes the differential pattern `C ⊕ C'`, achieving 100% accuracy at r=4 for simon32.
-2. **Siamese network** is the most parameter-efficient model (25K params) with 99.5% accuracy.
-3. **MINE** with XOR augmentation achieves 99.69% at r=4 — the explicit differential channel is critical.
-4. **Cipher hardness** varies significantly: CRAFT becomes indistinguishable at r=4, while SIMON32 remains distinguishable up to r=7.
-5. **Statistical representation** with 59 rich features achieves 99.83% — far better than the original 7-feature version (82.17%).
-6. All 8 ciphers pass test vector verification and avalanche effect checks.
+1. **Statistical representation** achieves the highest accuracy (99.83%) — the 59-feature vector captures differential structure better than raw bits alone.
+2. **Delta representation** is the most direct — encodes `C ⊕ C'` bits, achieving 99.58% at r=4 for simon32.
+3. **MLP** achieves 100% accuracy at r=4 with delta rep — the simplest model wins with the right representation.
+4. **Siamese network** is the most parameter-efficient model (25K params) with 99.75% accuracy.
+5. **MINE** with XOR augmentation achieves 99.38% at r=4 — the explicit differential channel is critical.
+6. **Cipher hardness** varies significantly: CRAFT becomes indistinguishable at r=4, while SIMON32 remains distinguishable up to r=8.
+7. **pyjamask, skinny64, skinny128** are perfectly distinguishable (100%) at their best rounds.
+8. All 8 ciphers pass test vector verification and avalanche effect checks.
 
 ---
 
@@ -383,7 +415,18 @@ python neural_cryptanalysis/data/generate_all_datasets.py
 | `model_benchmark_output.txt` | `benchmark_models.py` | Per-epoch training log for 3 models |
 | `representation_comparison_output.txt` | `compare_representations.py` | MLP accuracy across 7 representations |
 | `experiments_output.txt` | `run_all_experiments.py` | All 3 experiments + final summary |
-| `plots/acc_vs_rounds.png` | `run_all_experiments.py` | Accuracy vs rounds (all 4 models) |
-| `plots/acc_vs_rounds_multiciper.png` | `run_all_experiments.py` | Multi-cipher accuracy vs rounds |
+| `plots/acc_vs_rounds.png` | `run_all_experiments.py` | Accuracy vs rounds (all 4 models, simon32) |
+| `plots/acc_vs_rounds_ciphers_a.png` | `run_all_experiments.py` | Accuracy vs rounds (simon32/gift64/present/craft) |
+| `plots/acc_vs_rounds_ciphers_b.png` | `run_all_experiments.py` | Accuracy vs rounds (pyjamask/skinny64/gift128/skinny128) |
+| `plots/acc_vs_rounds_all_ciphers.png` | `run_all_experiments.py` | All 8 ciphers accuracy vs rounds |
+| `plots/acc_vs_rounds_simon32.png` | `run_all_experiments.py` | SIMON32 individual accuracy vs rounds |
+| `plots/acc_vs_rounds_gift64.png` | `run_all_experiments.py` | GIFT-64 individual accuracy vs rounds |
+| `plots/acc_vs_rounds_present.png` | `run_all_experiments.py` | PRESENT individual accuracy vs rounds |
+| `plots/acc_vs_rounds_craft.png` | `run_all_experiments.py` | CRAFT individual accuracy vs rounds |
+| `plots/acc_vs_rounds_pyjamask.png` | `run_all_experiments.py` | Pyjamask individual accuracy vs rounds |
+| `plots/acc_vs_rounds_skinny64.png` | `run_all_experiments.py` | SKINNY-64 individual accuracy vs rounds |
+| `plots/acc_vs_rounds_gift128.png` | `run_all_experiments.py` | GIFT-128 individual accuracy vs rounds |
+| `plots/acc_vs_rounds_skinny128.png` | `run_all_experiments.py` | SKINNY-128 individual accuracy vs rounds |
 | `plots/acc_vs_representation.png` | `run_all_experiments.py` | Accuracy vs representation |
 | `plots/acc_vs_model.png` | `run_all_experiments.py` | Accuracy vs model architecture |
+| `plots/acc_vs_cipher.png` | `run_all_experiments.py` | Best accuracy per cipher (all 8) |

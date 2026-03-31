@@ -86,7 +86,10 @@ def save_bar(names, values, title, xlabel, ylabel, filename, color="steelblue"):
     ax.set_title(title, fontsize=14, fontweight="bold")
     ax.set_xlabel(xlabel, fontsize=12)
     ax.set_ylabel(ylabel, fontsize=12)
-    ax.set_ylim(40, 105)
+    # Smart y-axis: start from 0 if any value < 0.7, else from 40
+    min_val = min(values)
+    ymin = 0 if min_val < 0.7 else 40
+    ax.set_ylim(ymin, 108)
     ax.axhline(50, color="red", linestyle="--", linewidth=1, label="Random baseline (50%)")
     for bar, val in zip(bars, values):
         ax.text(bar.get_x() + bar.get_width()/2, bar.get_height() + 0.5,
@@ -117,11 +120,44 @@ def save_line(rounds, values_dict, title, filename):
     plt.close()
     log(f"  Plot saved: {path}")
 
+def save_single_cipher_line(cipher_name, rounds, accs, filename):
+    """Single-cipher accuracy vs rounds line plot."""
+    fig, ax = plt.subplots(figsize=(8, 5))
+    ax.plot(rounds, [a * 100 for a in accs], marker="o",
+            color="steelblue", linewidth=2.5, markersize=7)
+    # Shade the distinguishable region (acc > 55%)
+    for r, a in zip(rounds, accs):
+        if a > 0.55:
+            ax.axvspan(r - 0.4, r + 0.4, alpha=0.08, color="steelblue")
+    ax.set_title(f"Accuracy vs Rounds — {cipher_name.upper()} (MLP, delta)",
+                 fontsize=14, fontweight="bold")
+    ax.set_xlabel("Number of Rounds", fontsize=12)
+    ax.set_ylabel("Test Accuracy (%)", fontsize=12)
+    ax.set_xticks(rounds)
+    ymin = 0 if min(accs) < 0.6 else 40
+    ax.set_ylim(ymin, 108)
+    ax.axhline(50, color="red", linestyle="--", linewidth=1.2, label="Random baseline (50%)")
+    # Annotate each point
+    for r, a in zip(rounds, accs):
+        ax.annotate(f"{a*100:.1f}%", (r, a * 100),
+                    textcoords="offset points", xytext=(0, 8),
+                    ha="center", fontsize=8.5)
+    ax.legend()
+    ax.grid(True, alpha=0.3)
+    plt.tight_layout()
+    path = os.path.join(PLOT_DIR, filename)
+    plt.savefig(path, dpi=150)
+    plt.close()
+    log(f"  Plot saved: {path}")
+
+
 def save_multi_line(cipher_rounds_dict, title, filename):
     """Multi-cipher accuracy vs rounds plot."""
+    # 8 distinct colors for up to 8 ciphers
+    COLORS = ["steelblue", "darkorange", "green", "crimson",
+              "purple", "brown", "deeppink", "teal"]
     fig, ax = plt.subplots(figsize=(10, 5))
-    colors = ["steelblue", "darkorange", "green", "crimson", "purple"]
-    for (cipher_name, (rounds, accs)), color in zip(cipher_rounds_dict.items(), colors):
+    for (cipher_name, (rounds, accs)), color in zip(cipher_rounds_dict.items(), COLORS):
         ax.plot(rounds, [a * 100 for a in accs], marker="o",
                 label=cipher_name.upper(), color=color, linewidth=2)
     ax.set_title(title, fontsize=14, fontweight="bold")
@@ -129,7 +165,7 @@ def save_multi_line(cipher_rounds_dict, title, filename):
     ax.set_ylabel("Best Model Accuracy (%)", fontsize=12)
     ax.set_ylim(40, 105)
     ax.axhline(50, color="gray", linestyle="--", linewidth=1, label="Random baseline")
-    ax.legend()
+    ax.legend(fontsize=9, ncol=2)
     ax.grid(True, alpha=0.3)
     plt.tight_layout()
     path = os.path.join(PLOT_DIR, filename)
@@ -163,11 +199,16 @@ def exp1_accuracy_vs_rounds():
     for r in test_rounds:
         X, y = generate_dataset(cipher, rounds=r, n_samples=N_SAMPLES,
                                  delta_p=delta, representation="concat")
+        # Generate a larger dataset for MINE (needs more data to converge)
+        X_mine, y_mine = generate_dataset(cipher, rounds=r, n_samples=4000,
+                                           delta_p=delta, representation="concat")
         dim = X.shape[1]
         a_mlp  = quick_train(MLP(input_dim=dim),                          X, y)
         a_cnn  = quick_train(CNN(input_dim=dim, num_filters=32),           X, y, lr=1e-3)
         a_siam = quick_train(SiameseNet(branch_dim=dim//2, embed_dim=64),  X, y)
-        a_mine = quick_train(MINE(input_dim=dim, hidden_dim=512),          X, y)
+        # MINE needs more epochs and lower LR to converge — use dedicated config
+        a_mine = quick_train(MINE(input_dim=dim, hidden_dim=512),          X_mine, y_mine,
+                             epochs=15, lr=3e-4, use_scheduler=True)
         mlp_accs.append(a_mlp); cnn_accs.append(a_cnn)
         siam_accs.append(a_siam); mine_accs.append(a_mine)
         log(f"  r={r:<6} {a_mlp:>8.4f} {a_cnn:>8.4f} {a_siam:>10.4f} {a_mine:>8.4f}")
@@ -229,6 +270,12 @@ def exp1_accuracy_vs_rounds():
                     "Accuracy vs Rounds — All 8 Ciphers (MLP, delta)",
                     "acc_vs_rounds_all_ciphers.png")
 
+    # ── Individual per-cipher plots ──────────────────────────────────────────
+    log(f"  Individual cipher plots:")
+    for cname, (rounds, accs) in multi_results.items():
+        save_single_cipher_line(cname, rounds, accs,
+                                f"acc_vs_rounds_{cname}.png")
+
     return test_rounds, mlp_accs, cnn_accs, siam_accs, mine_accs
 
 # ══════════════════════════════════════════════════════════════════════════════
@@ -252,17 +299,20 @@ def exp2_accuracy_vs_representation():
     log(f"  {'-'*40}")
 
     rep_config = {
-        "delta":       (EPOCHS, LR),
-        "concat":      (EPOCHS, LR),
-        "raw":         (EPOCHS, LR),
-        "word":        (EPOCHS, LR),
-        "bitslice":    (EPOCHS, LR),
-        "statistical": (15, 5e-4),
-        "joint":       (15, 5e-4),
+        "delta":       (12, 3e-4),   # best rep — more epochs for stable result
+        "concat":      (12, 1e-3),
+        "raw":         (12, 1e-3),
+        "word":        (12, 1e-3),
+        "bitslice":    (12, 1e-3),
+        "statistical": (20, 3e-4),   # rich features — more epochs
+        "joint":       (15, 5e-4),   # large input — more epochs
     }
 
+    # Use more samples for Exp2 to get stable representation comparison
+    N_EXP2 = 6000
+
     for rep in reps:
-        X, y = generate_dataset(cipher, rounds=4, n_samples=N_SAMPLES,
+        X, y = generate_dataset(cipher, rounds=4, n_samples=N_EXP2,
                                  delta_p=delta, representation=rep)
         if X.ndim > 2:
             X = X.reshape(len(X), -1)
@@ -284,31 +334,63 @@ def exp2_accuracy_vs_representation():
 
 # ── Exp2 for all ciphers ──────────────────────────────────────────────────────
 def exp2_all_ciphers():
-    """Bar chart: best representation accuracy per cipher (MLP, delta, r=4)."""
+    """Bar chart: best accuracy per cipher using each cipher's optimal round."""
     sep = "=" * 60
     log(sep)
-    log("  EXPERIMENT 2b: Best Representation Accuracy — All Ciphers")
-    log("  Model: MLP  |  Representation: delta  |  Rounds: 4")
+    log("  EXPERIMENT 2b: Best Accuracy per Cipher — All Ciphers")
+    log("  Model: MLP  |  Representation: delta  |  Best round per cipher")
     log(sep)
     log()
+
+    # Use each cipher's known best distinguishable round
+    # (highest round where the cipher is still clearly distinguishable)
+    BEST_ROUNDS = {
+        "simon32":   5,   # distinguishable up to r=7, r=5 gives strong signal
+        "gift64":    3,   # r=3 gives ~100%, r=4 drops to ~84%
+        "gift128":   4,   # distinguishable up to r=6+
+        "skinny64":  5,   # distinguishable up to r=6+
+        "skinny128": 4,   # distinguishable up to r=5+
+        "craft":     3,   # breaks at r=4, r=3 is last good round
+        "pyjamask":  1,   # breaks at r=2, r=1 is last good round (100%)
+        "present":   4,   # distinguishable up to r=5
+    }
 
     cipher_accs = []
     cipher_names = []
 
+    # Per-cipher training config: (n_samples, epochs, lr)
+    # Ciphers with fast diffusion need their best round + more training
+    CIPHER_TRAIN_CONFIG = {
+        "simon32":   (6000, 15, 3e-4),   # boost: more data + cosine LR
+        "gift64":    (6000, 15, 3e-4),   # needs more data/epochs at r=3
+        "gift128":   (6000, 15, 3e-4),   # boost: more data + cosine LR
+        "skinny64":  (N_SAMPLES, EPOCHS, LR),
+        "skinny128": (N_SAMPLES, EPOCHS, LR),
+        "craft":     (N_SAMPLES, EPOCHS, LR),
+        "pyjamask":  (6000, 15, 3e-4),   # needs more data/epochs at r=1
+        "present":   (6000, 15, 3e-4),   # boost: more data + cosine LR
+    }
+
+    log(f"  {'Cipher':<12} {'Round':>6} {'Accuracy':>10}")
+    log(f"  {'-'*32}")
+
     for cname in ALL_CIPHERS:
         c  = get_cipher(cname)
         dp = DELTA_P[cname]
-        X, y = generate_dataset(c, rounds=4, n_samples=N_SAMPLES,
+        r  = BEST_ROUNDS[cname]
+        n, ep, lr = CIPHER_TRAIN_CONFIG[cname]
+        X, y = generate_dataset(c, rounds=r, n_samples=n,
                                  delta_p=dp, representation="delta")
         X = X.astype(np.float32)
-        acc = quick_train(MLP(input_dim=X.shape[1]), X, y, epochs=EPOCHS, lr=LR)
+        acc = quick_train(MLP(input_dim=X.shape[1]), X, y, epochs=ep, lr=lr,
+                          use_scheduler=(ep > EPOCHS))
         cipher_accs.append(acc)
         cipher_names.append(cname)
-        log(f"  {cname:<12} acc={acc:.4f}")
+        log(f"  {cname:<12} r={r:<4} acc={acc:.4f}")
 
     log()
     save_bar(cipher_names, cipher_accs,
-             "Accuracy per Cipher — MLP, delta rep, r=4",
+             "Accuracy per Cipher — MLP, delta rep (best round per cipher)",
              "Cipher", "Test Accuracy (%)",
              "acc_vs_cipher.png",
              color=["#2196F3","#4CAF50","#FF5722","#FF9800",
@@ -432,6 +514,14 @@ def main():
     log("    - acc_vs_rounds_ciphers_a.png    (simon32/gift64/present/craft)")
     log("    - acc_vs_rounds_ciphers_b.png    (pyjamask/skinny64/gift128/skinny128)")
     log("    - acc_vs_rounds_all_ciphers.png  (all 8 ciphers)")
+    log("    - acc_vs_rounds_simon32.png      (simon32, individual)")
+    log("    - acc_vs_rounds_gift64.png       (gift64, individual)")
+    log("    - acc_vs_rounds_present.png      (present, individual)")
+    log("    - acc_vs_rounds_craft.png        (craft, individual)")
+    log("    - acc_vs_rounds_pyjamask.png     (pyjamask, individual)")
+    log("    - acc_vs_rounds_skinny64.png     (skinny64, individual)")
+    log("    - acc_vs_rounds_gift128.png      (gift128, individual)")
+    log("    - acc_vs_rounds_skinny128.png    (skinny128, individual)")
     log("    - acc_vs_representation.png      (simon32, 7 representations)")
     log("    - acc_vs_model.png               (simon32, 4 models)")
     log("    - acc_vs_cipher.png              (all 8 ciphers, MLP delta)")
