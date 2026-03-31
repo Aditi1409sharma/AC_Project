@@ -38,6 +38,10 @@ EPOCHS      = 6
 BATCH       = 128
 LR          = 1e-3
 
+# All ciphers for multi-cipher experiments
+ALL_CIPHERS = ["simon32", "gift64", "present", "craft", "pyjamask",
+               "skinny64", "gift128", "skinny128"]
+
 _lines = []
 
 def log(msg=""):
@@ -179,16 +183,20 @@ def exp1_accuracy_vs_rounds():
               f"Accuracy vs Rounds — {CIPHER_NAME.upper()} (all models)",
               "acc_vs_rounds.png")
 
-    # ── Part B: multi-cipher comparison (Siamese, delta rep) ─────────────────
-    log(f"  Part B — Multi-cipher | Siamese | delta rep")
-    log(f"  {'Cipher':<12} {'Rounds tested':<20} {'Max dist. round':>16}")
-    log(f"  {'-'*52}")
+    # ── Part B: multi-cipher comparison (MLP, delta rep) ────────────────────
+    log(f"  Part B — Multi-cipher | MLP | delta rep")
+    log(f"  {'Cipher':<12} {'Rounds tested':<24} {'Max dist. round':>16}")
+    log(f"  {'-'*55}")
 
     multi_cipher_configs = {
-        "simon32": (list(range(2, 10)), DELTA_P["simon32"]),
-        "gift64":  (list(range(2, 9)),  DELTA_P["gift64"]),
-        "present": (list(range(2, 9)),  DELTA_P["present"]),
-        "craft":   (list(range(2, 8)),  DELTA_P["craft"]),
+        "simon32":   (list(range(2, 10)), DELTA_P["simon32"]),
+        "gift64":    (list(range(2, 9)),  DELTA_P["gift64"]),
+        "present":   (list(range(2, 9)),  DELTA_P["present"]),
+        "craft":     (list(range(2, 8)),  DELTA_P["craft"]),
+        "pyjamask":  (list(range(1, 8)),  DELTA_P["pyjamask"]),
+        "skinny64":  (list(range(2, 9)),  DELTA_P["skinny64"]),
+        "gift128":   (list(range(2, 8)),  DELTA_P["gift128"]),
+        "skinny128": (list(range(2, 8)),  DELTA_P["skinny128"]),
     }
     multi_results = {}
 
@@ -202,13 +210,24 @@ def exp1_accuracy_vs_rounds():
             acc = quick_train(MLP(input_dim=dim), X, y)
             accs.append(acc)
         multi_results[cname] = (rounds, accs)
-        max_r = max((r for r,a in zip(rounds,accs) if a > 0.55), default=rounds[0])
-        log(f"  {cname:<12} {str(rounds):<20} r={max_r} ({accs[rounds.index(max_r)]:.4f})")
+        max_r = max((r for r, a in zip(rounds, accs) if a > 0.55), default=rounds[0])
+        log(f"  {cname:<12} {str(rounds):<24} r={max_r} ({accs[rounds.index(max_r)]:.4f})")
 
     log()
+
+    # Split into two plots for readability (4 ciphers each)
+    ciphers_a = {k: multi_results[k] for k in ["simon32", "gift64", "present", "craft"]}
+    ciphers_b = {k: multi_results[k] for k in ["pyjamask", "skinny64", "gift128", "skinny128"]}
+    save_multi_line(ciphers_a,
+                    "Accuracy vs Rounds — Ciphers Group A (MLP, delta)",
+                    "acc_vs_rounds_ciphers_a.png")
+    save_multi_line(ciphers_b,
+                    "Accuracy vs Rounds — Ciphers Group B (MLP, delta)",
+                    "acc_vs_rounds_ciphers_b.png")
+    # Also save combined (all 8)
     save_multi_line(multi_results,
-                    "Accuracy vs Rounds — Multi-Cipher Comparison (MLP, delta)",
-                    "acc_vs_rounds_multiciper.png")
+                    "Accuracy vs Rounds — All 8 Ciphers (MLP, delta)",
+                    "acc_vs_rounds_all_ciphers.png")
 
     return test_rounds, mlp_accs, cnn_accs, siam_accs, mine_accs
 
@@ -262,6 +281,39 @@ def exp2_accuracy_vs_representation():
              color=["#2196F3","#4CAF50","#FF5722","#795548","#FF9800","#9C27B0","#F44336"])
 
     return reps, rep_accs
+
+# ── Exp2 for all ciphers ──────────────────────────────────────────────────────
+def exp2_all_ciphers():
+    """Bar chart: best representation accuracy per cipher (MLP, delta, r=4)."""
+    sep = "=" * 60
+    log(sep)
+    log("  EXPERIMENT 2b: Best Representation Accuracy — All Ciphers")
+    log("  Model: MLP  |  Representation: delta  |  Rounds: 4")
+    log(sep)
+    log()
+
+    cipher_accs = []
+    cipher_names = []
+
+    for cname in ALL_CIPHERS:
+        c  = get_cipher(cname)
+        dp = DELTA_P[cname]
+        X, y = generate_dataset(c, rounds=4, n_samples=N_SAMPLES,
+                                 delta_p=dp, representation="delta")
+        X = X.astype(np.float32)
+        acc = quick_train(MLP(input_dim=X.shape[1]), X, y, epochs=EPOCHS, lr=LR)
+        cipher_accs.append(acc)
+        cipher_names.append(cname)
+        log(f"  {cname:<12} acc={acc:.4f}")
+
+    log()
+    save_bar(cipher_names, cipher_accs,
+             "Accuracy per Cipher — MLP, delta rep, r=4",
+             "Cipher", "Test Accuracy (%)",
+             "acc_vs_cipher.png",
+             color=["#2196F3","#4CAF50","#FF5722","#FF9800",
+                    "#9C27B0","#F44336","#795548","#00BCD4"])
+    return cipher_names, cipher_accs
 
 # ══════════════════════════════════════════════════════════════════════════════
 # EXPERIMENT 3 — Accuracy vs Model  (now includes MINE)
@@ -351,6 +403,7 @@ def main():
     rounds, mlp_r, cnn_r, siam_r, mine_r = exp1_accuracy_vs_rounds()
     reps,   rep_accs                      = exp2_accuracy_vs_representation()
     models, model_accs                    = exp3_accuracy_vs_model()
+    ciphers, cipher_accs                  = exp2_all_ciphers()
 
     sep = "=" * 60
     log(sep)
@@ -370,11 +423,18 @@ def main():
     for name, acc in zip(models, model_accs):
         log(f"  {name:<12} {acc:.4f}")
     log()
+    log("  Exp 2b — Accuracy per Cipher (MLP, delta, r=4):")
+    for cname, acc in zip(ciphers, cipher_accs):
+        log(f"  {cname:<12} {acc:.4f}")
+    log()
     log("  Plots saved in: plots/")
-    log("    - acc_vs_rounds.png")
-    log("    - acc_vs_rounds_multiciper.png")
-    log("    - acc_vs_representation.png")
-    log("    - acc_vs_model.png")
+    log("    - acc_vs_rounds.png              (simon32, all 4 models)")
+    log("    - acc_vs_rounds_ciphers_a.png    (simon32/gift64/present/craft)")
+    log("    - acc_vs_rounds_ciphers_b.png    (pyjamask/skinny64/gift128/skinny128)")
+    log("    - acc_vs_rounds_all_ciphers.png  (all 8 ciphers)")
+    log("    - acc_vs_representation.png      (simon32, 7 representations)")
+    log("    - acc_vs_model.png               (simon32, 4 models)")
+    log("    - acc_vs_cipher.png              (all 8 ciphers, MLP delta)")
     log(sep)
 
     save_log()
