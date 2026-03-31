@@ -4,6 +4,10 @@
 
 This project implements a complete neural cryptanalysis framework that trains machine learning models to distinguish reduced-round block ciphers from random permutations. The approach is inspired by Gohr (2019) and the broader field of differential neural cryptanalysis. Given a pair of ciphertexts `(C, C')` produced from plaintexts with a fixed XOR difference `ΔP`, the models learn to predict whether the outputs came from a real cipher or a random permutation.
 
+Git repo - https://github.com/Aditi1409sharma/AC_Project.git
+
+Overleaf shareable link - https://www.overleaf.com/read/smmtbpmykbzm#123310
+
 ## Libraries Used
 
 | Library | Version | Purpose |
