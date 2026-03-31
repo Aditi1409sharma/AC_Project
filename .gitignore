@@ -1,3 +1,68 @@
+# # ── Virtual environments ──────────────────────────────────────────────────────
+# venv/
+# env/
+# ENV/
+# .venv/
+
+# # ── Python cache / compiled files ─────────────────────────────────────────────
+# __pycache__/
+# *.pyc
+# *.pyo
+# *.pyd
+# *.pyc.*
+
+# # ── Jupyter notebooks ─────────────────────────────────────────────────────────
+# .ipynb_checkpoints/
+# *.ipynb
+
+# # ── Environment variables ─────────────────────────────────────────────────────
+# .env
+# .env.*
+
+# # ── Logs & temp files ─────────────────────────────────────────────────────────
+# *.log
+# *.tmp
+# *.swp
+# *.bak
+
+# # ── OS files ──────────────────────────────────────────────────────────────────
+# .DS_Store
+# Thumbs.db
+# desktop.ini
+
+# # ── IDE / editor folders ──────────────────────────────────────────────────────
+# .vscode/
+# .idea/
+# *.code-workspace
+
+# # ── PyTorch model weights & checkpoints ───────────────────────────────────────
+# *.pt
+# *.pth
+# *.ckpt
+# checkpoints/
+
+# # ── Large datasets (generated, not source-controlled) ─────────────────────────
+# neural_cryptanalysis/data/datasets/
+
+# # ── Build / packaging ─────────────────────────────────────────────────────────
+# build/
+# dist/
+# *.egg-info/
+# *.egg
+
+# # ── Cache ─────────────────────────────────────────────────────────────────────
+# .cache/
+# .pytest_cache/
+# .mypy_cache/
+# .ruff_cache/
+
+# # ── Coverage ──────────────────────────────────────────────────────────────────
+# .coverage
+# htmlcov/
+# coverage.xml
+
+
+
 # ── Virtual environments ──────────────────────────────────────────────────────
 venv/
 env/
